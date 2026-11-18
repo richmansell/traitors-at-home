@@ -119,6 +119,22 @@ input.codein{font:700 30px Cinzel,serif;text-align:center;letter-spacing:.3em;te
 .goalrow{display:grid;grid-template-columns:1fr 80px 40px;gap:6px;align-items:center}
 .field{margin:10px 0}
 .field>.label{margin-bottom:2px}
+.mdock{position:fixed;right:12px;bottom:12px;z-index:60;width:min(380px,calc(100vw - 24px));background:var(--panel2);border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.55)}
+.mbar{display:flex;gap:6px;align-items:center;padding:8px}
+.mbar .mnow{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:12px;color:var(--muted)}
+.mbody{padding:0 8px 10px}
+.mdock.min .mbody{height:0;overflow:hidden;padding:0}
+.mtracks{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0}
+.mtracks{flex-direction:column;flex-wrap:nowrap;max-height:240px;overflow-y:auto;gap:2px}
+.mtrack{appearance:none;display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:transparent;border:0;border-radius:8px;padding:6px 8px;color:var(--text);font:inherit;font-size:13px;cursor:pointer}
+.mtrack:hover{background:#2a2331}
+.mtrack.on{background:#3a2e1c;color:var(--gold2)}
+.mtrack .mn{width:18px;color:var(--muted);font-size:11px;flex:none}
+.mtrack .mtt{flex:1;min-width:0;display:flex;flex-direction:column}
+.mtrack .mtt small{color:var(--muted);font-size:11px}
+.mtrack .mlen{font-variant-numeric:tabular-nums;color:var(--gold);font-weight:600;flex:none}
+.mbody input[type=range]{width:100%;accent-color:var(--gold)}
+.hwrap{padding-bottom:110px}
 .mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;max-height:460px;overflow-y:auto;padding:2px;margin-bottom:10px}
 .mcard{appearance:none;text-align:left;border:1px solid var(--line);border-radius:12px;padding:10px;background:#1b1620;color:var(--text);cursor:pointer;font:inherit;display:flex;flex-direction:column;gap:4px}
 .mcard:hover{border-color:#5a4c66}
@@ -186,8 +202,9 @@ function heart(at,v){v=v||1;tone({f:62,f2:38,dur:.2,vol:.9*v,at:at});tone({f:54,
 function boom(at){tone({f:95,f2:28,dur:2.2,vol:.95,atk:.005,at:at});tone({f:196,type:'triangle',dur:3,vol:.28,atk:.005,at:at});
   tone({f:293.7,type:'triangle',dur:2.6,vol:.16,atk:.005,at:at});tone({f:392,dur:2,vol:.09,at:at+.02})}
 /* matches the on-screen sequence: "Do not react" 0-2.2s, then 3,2,1, reveal at 5.2s */
+var duckMusic=null;
 var lastReveal=0;
-function revealSound(){var now=Date.now();if(now-lastReveal<4000)return;lastReveal=now;heart(0,.55);heart(1.1,.65);heart(2.2,.85);heart(3.2,.9);heart(4.2,1);boom(5.2)}
+function revealSound(){var now=Date.now();if(now-lastReveal<4000)return;lastReveal=now;if(duckMusic)duckMusic();heart(0,.55);heart(1.1,.65);heart(2.2,.85);heart(3.2,.9);heart(4.2,1);boom(5.2)}
 function setMuted(m){muted=!!m;LS.set(MUTE_KEY,muted)}
 window.addEventListener('pointerdown',function(){unlockAudio()});
 
@@ -734,6 +751,57 @@ function hostMain(){
     return pot+players+lg;
   }
 
+  /* ---- soundtrack dock (YouTube embed, lives outside #app so re-renders never stop the music) ---- */
+  function musicDock(){
+    var DEF='OLAK5uy_l_BpRMHY0TEIt-4uIbko1yg3amGZmcbaQ';
+    var list=LS.get('traitors-yt-list',DEF),player=null,ready=false,cur=-1,ducked=false;
+    /* the default album: title, length, suggested moment */
+    var TRACKS=[['The Traitors Main Theme','2:49','Opening / roles'],['Cloak and Dagger','2:56','Free time'],['Playing Detective','3:45','Free time'],
+      ['Conspiracy Theories','2:12','Pods plotting'],['A Traitor In Our Midst','3:06','Role reveal'],["We're Coming For You",'3:39','Night'],
+      ['The Secret Meeting','4:58','Traitors\' meeting'],['A Stab In The Dark','3:28','Night'],['Accusations','2:51','Round Table'],
+      ['You Have Been Murdered','2:47','Dawn reveal'],['Choose Wisely','3:59','Voting'],['The Time Has Come','3:14','Banishment'],
+      ['The Round Table','4:09','Round Table'],["It's Just A Game",'2:14','Mission'],['Rise To The Challenge','2:30','Mission'],['Parting Gift','3:09','Endgame']];
+    var durs={};
+    var dock=document.createElement('div');dock.className='mdock min';
+    dock.innerHTML='<div class="mbar"><button class="btn xs ghost" data-m="tog">🎵 ▴</button><span class="mnow" id="mnow">Soundtrack</span>'+
+      '<button class="btn xs ghost" data-m="prev">⏮</button><button class="btn xs gold" data-m="play" id="mplay">▶</button><button class="btn xs ghost" data-m="next">⏭</button></div>'+
+      '<div class="mbody"><div id="ytp"></div><div class="mtracks" id="mtracks"></div>'+
+      '<div class="small muted">Volume</div><input type="range" id="mvol" min="0" max="100" value="'+LS.get('traitors-yt-vol',70)+'">'+
+      '<label class="small" style="display:flex;gap:6px;align-items:center;margin:6px 0"><input type="checkbox" id="mduck" '+(LS.get('traitors-yt-duck',true)?'checked':'')+'> Quieten music during reveals</label>'+
+      '<div class="row"><input type="text" id="mlist" placeholder="Paste a YouTube playlist link"><button class="btn xs" data-m="load" style="flex:none">Load</button></div></div>';
+    document.body.appendChild(dock);
+    var $=function(id){return document.getElementById(id)};
+    function vol(){return +$('mvol').value}
+    function tracks(){if(!ready)return;var ids=player.getPlaylist()||[];
+      var known=list===DEF;
+      $('mtracks').innerHTML=ids.map(function(_,i){var t=known&&TRACKS[i];var len=t?t[1]:(durs[i]||'');
+        return '<button class="mtrack'+(i===cur?' on':'')+'" data-m="t" data-i="'+i+'"><span class="mn">'+(i+1)+'</span><span class="mtt">'+esc(t?t[0]:'Track '+(i+1))+
+          (t?'<small>'+esc(t[2])+'</small>':'')+'</span><span class="mlen">'+esc(len)+'</span></button>'}).join('')}
+    function nowPlaying(){if(!ready)return;try{var d=player.getVideoData();cur=player.getPlaylistIndex();var du=player.getDuration();if(du>0&&cur>=0)durs[cur]=mmss(du*1000).replace(/^0/,'');$('mnow').textContent=d&&d.title?d.title:'Soundtrack';
+      var st=player.getPlayerState();$('mplay').textContent=st===1?'⏸':'▶';tracks()}catch(e){}}
+    function build(){
+      if(player){try{player.destroy()}catch(e){}}ready=false;$('ytp').innerHTML='<div id="ytpi"></div>';
+      player=new YT.Player('ytpi',{width:'100%',height:'190',playerVars:{listType:'playlist',list:list,playsinline:1,rel:0,modestbranding:1},
+        events:{onReady:function(){ready=true;player.setVolume(vol());nowPlaying();setTimeout(nowPlaying,1500)},onStateChange:function(){nowPlaying()},
+          onError:function(){$('mnow').textContent='Could not play that track. Skipping…';try{player.nextVideo()}catch(e){}}}});
+    }
+    dock.addEventListener('click',function(e){var b=e.target.closest('[data-m]');if(!b)return;var m=b.dataset.m;
+      if(m==='tog'){dock.classList.toggle('min');b.textContent=dock.classList.contains('min')?'🎵 ▴':'🎵 ▾';return}
+      if(!ready){$('mnow').textContent='Loading player…';return}
+      if(m==='play'){player.getPlayerState()===1?player.pauseVideo():player.playVideo()}
+      else if(m==='next')player.nextVideo();else if(m==='prev')player.previousVideo();
+      else if(m==='t')player.playVideoAt(+b.dataset.i);
+      else if(m==='load'){var v=$('mlist').value,mm=v.match(/list=([A-Za-z0-9_-]+)/)||v.match(/^([A-Za-z0-9_-]{12,})$/);
+        if(!mm){alert('Paste a YouTube playlist link (it contains list=…)');return}list=mm[1];LS.set('traitors-yt-list',list);build()}
+    });
+    $('mvol').addEventListener('input',function(){LS.set('traitors-yt-vol',vol());if(ready&&!ducked)player.setVolume(vol())});
+    $('mduck').addEventListener('change',function(){LS.set('traitors-yt-duck',this.checked)});
+    duckMusic=function(){try{if(!ready||!$('mduck').checked||player.getPlayerState()!==1)return;ducked=true;player.setVolume(Math.round(vol()*0.2));
+      setTimeout(function(){ducked=false;try{player.setVolume(vol())}catch(e){}},9000)}catch(e){}};
+    window.onYouTubeIframeAPIReady=build;
+    var sc=document.createElement('script');sc.src='https://www.youtube.com/iframe_api';sc.onerror=function(){$('mnow').textContent='YouTube could not load'};document.head.appendChild(sc);
+  }
+  try{musicDock()}catch(e){}
   window.addEventListener('beforeunload',function(e){if(S.started){e.preventDefault();e.returnValue=''}});
   keepAwake();
   render();startPeer();
