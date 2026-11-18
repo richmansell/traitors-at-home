@@ -295,13 +295,13 @@ var MISSIONS=[
  ['The Castle Quiz','5 questions, one group answer each','Claudia asks 5 questions. The group agrees one answer per question within 20 seconds.',3,'Quiz questions',[['Question 1',2],['Question 2',2],['Question 3',2],['Question 4',2],['Question 5',2]],'First to shout the right answer to question 5'],
  ['The Treasure Hunt','Find 5 hidden tokens around the house','Claudia has hidden 5 tokens around the house. Find them all and bring them to the Round Table.',5,'5 hidden tokens',[['Token 1',2],['Token 2',2],['Token 3',2],['Token 4',2],['Token 5',2]],'Whoever finds the most tokens'],
  ['Mind Meld','Pairs try to say the same word at once','In pairs, both say a word on "3, 2, 1". Then keep trying to say the SAME word by linking your last two words. 6 attempts per pair.',5,'',[['First pair melds',2],['Second pair melds',2],['Third pair melds',2],['Fourth pair melds',2],['Every pair melds',2]],'The first pair to meld choose one of themselves'],
- ['Catch & Count','Throw-and-catch streak with no drops','Stand in a circle, throw a ball across it and count catches out loud. A drop resets to zero.',3,'Ball or rolled-up socks',[['Reach 15',3],['Reach 30',3],['Reach 50',4]],'The person who makes the record-breaking catch'],
+ ['Bat & Count','Bat a ball around the circle: no catching, count the hits','Stand in a circle. Bat a soft ball (or balloon) with an open hand to someone else in the circle; no catching or holding, and nobody may hit it twice in a row. Count every hit out loud. If it touches the floor or someone catches it, the count goes back to zero.',3,'Soft ball, beach ball or balloon',[['Reach 10 hits',3],['Reach 20 hits',3],['Reach 30 hits',4]],'The person who makes the record-breaking hit'],
  ['Human Knot','Untangle a knot of hands into a circle','Everyone grabs two random hands across the circle. Untangle into a single circle without letting go.',4,'',[['Untangled in time',6],['Done in under 2 minutes',4]],'Claudia awards it to the calmest leader'],
  ['Blind Builder','Guide a blindfolded artist with yes/no only','One player is blindfolded. The rest may only say "yes" or "no" as they guide them to draw a castle. Claudia judges.',3,'Paper, pen, blindfold',[['Recognisable castle',4],['Door and windows',3],['Claudia is impressed',3]],'The blindfolded artist, if it\'s recognisable'],
  ['Anagram Dungeon','Solve 3 anagrams, 60 seconds each','Claudia reads 3 anagrams (e.g. "RAT TOIRS" = TRAITORS). 60 seconds each.',3,'Prepared anagrams',[['Anagram 1',3],['Anagram 2',3],['Anagram 3',4]],'Whoever solves the most'],
  ['Shield Tournament','Rock-paper-scissors knockout for a Shield','Rock-paper-scissors knockout until one player is left standing. Play fair, play fast.',3,'',[['Tournament done in time',5],['Nobody cheats (Claudia decides)',5]],'The last player standing'],
  ['Cup Stack Relay','Relay to build and collapse a cup pyramid','In relay, each player builds a 10-cup pyramid then collapses it back into a stack before the next goes.',3,'10 plastic cups',[['Half the group finishes',3],['Everyone finishes',4],['Under 2 minutes',3]],'Fastest individual stacker'],
- ['Bottle Flip','Land a bottle upright as many times as possible','Take turns flipping a part-filled water bottle to land upright. Count the group total.',3,'Plastic bottle, part filled',[['3 landings',3],['6 landings',3],['10 landings',4]],'First to land two in a row'],
+ ['Bottle Flip','Land as many bottle flips as the group can','Take turns flipping a part-filled water bottle so it lands upright. One flip per turn, then pass it on. Count the group total out loud; Claudia keeps score.',4,'Plastic bottle, part filled (two speeds it up)',[['10 landings',3],['20 landings',3],['30 landings',4]],'First to land two in a row'],
  ['Paper Plane Gauntlet','Fly planes into a target across the room','Everyone folds a paper plane and gets 2 throws at a bin or box across the room.',4,'Paper, a bin or box',[['3 hits',3],['6 hits',3],['Everyone hits once',4]],'Longest flight'],
  ['Name That Tune','Name 5 songs from the intro','Claudia plays (or hums) 5 song intros. The group names song and artist.',4,'Phone with music',[['Song 1',2],['Song 2',2],['Song 3',2],['Song 4',2],['Song 5',2]],'Most songs named first'],
  ['Castle Charades','Act out films, the group guesses','Each pod acts out a film Claudia whispers to them. The rest guess within 60 seconds each.',5,'Film list',[['First film guessed',3],['Second film guessed',3],['All films guessed',4]],'Best actor (group vote, not yourself)'],
@@ -322,17 +322,21 @@ var MISSIONS=[
  ['Sardines','One hides; the group must all find them','One player hides. Everyone searches. Anyone who finds them squeezes in with them.',5,'',[['Half the group finds them',4],['Everyone finds them',6]],'First to find the hider'],
  ['Blind Taste Test','Name 5 foods while blindfolded','Blindfolded tasters try 5 foods or drinks. The group must name them all.',4,'5 foods, blindfold',[['2 named',3],['4 named',3],['All 5',4]],'The taster who gets the most right'],
  ['Domino Run','Build a chain that topples all the way','Build a domino chain (dominoes, books, DVD cases) at least 2 metres long that topples in one go.',5,'Dominoes or books',[['It topples 1 metre',4],['Topples the whole way',4],['Done first try',2]],'Whoever sets the final piece'],
+ ['Cheer Them On','Guess the secret action from cheers and groans only','One player (the Guesser) leaves the room. Everyone else secretly agrees an action for them to do, like "sit in Claudia\'s chair and wave" or "take off one sock". The Guesser comes back and starts trying things. Nobody may speak: the room can only CHEER when they are getting warmer and GROAN when they are going wrong. The Guesser has 90 seconds to do the exact action. Then swap Guessers. Ghosts can be Guessers or join the cheering.',6,'',[['Guesser 1 does it in 90 seconds',2],['Guesser 2 does it in 90 seconds',2],['Guesser 3 does it in 90 seconds',2],['Guesser 4 does it in 90 seconds',2],['Guesser 5 does it in 90 seconds',2]],'The fastest Guesser'],
  ['Who Said It?','Match quotes to players','Everyone writes an anonymous fact about themselves. Claudia reads them; the group matches facts to people.',5,'Paper, pens',[['Half matched',4],['All but one',3],['All matched',3]],'Best detective (most correct guesses)']
 ].map(function(a){return {title:a[0],sum:a[1],desc:a[2],mins:a[3],props:a[4],goals:a[5],shield:a[6]}});
+/* cut after Rich's review (Traitors Mission Review sheet) */
+var CUT=['The Castle Quiz','Anagram Dungeon','Cup Stack Relay','Paper Plane Gauntlet','Name That Tune','Spoon Relay','Forbidden Words','Sweet Sort','Jar Estimate','Lip Reader','Sardines','Blind Taste Test','Domino Run','Who Said It?'];
+MISSIONS=MISSIONS.filter(function(m){return CUT.indexOf(m.title)<0});
 var FREE_MINS=5;
 /* group size per mission: [min, sweet spot from, sweet spot to, max] */
 var SIZE={'Tower of Trust':[3,3,6,10],'The Silent Line-Up':[5,6,12,14],'Keepy-Uppy':[4,5,10,12],'Memory Vault':[3,4,10,12],'The Castle Quiz':[3,4,12,14],
- 'The Treasure Hunt':[4,6,12,14],'Mind Meld':[4,4,8,12],'Catch & Count':[4,5,10,12],'Human Knot':[6,6,10,10],'Blind Builder':[3,4,8,12],'Anagram Dungeon':[3,3,8,12],
+ 'The Treasure Hunt':[4,6,12,14],'Mind Meld':[4,4,8,12],'Bat & Count':[4,5,10,12],'Human Knot':[6,6,10,10],'Blind Builder':[3,4,8,12],'Anagram Dungeon':[3,3,8,12],
  'Shield Tournament':[4,6,12,14],'Cup Stack Relay':[3,4,8,12],'Bottle Flip':[3,4,10,12],'Paper Plane Gauntlet':[3,4,12,14],'Name That Tune':[3,4,12,14],
  'Castle Charades':[6,8,12,14],'Pictionary Pods':[6,8,12,14],'Coin in the Cup':[3,4,12,14],'Spoon Relay':[4,6,10,12],'Alphabet Chain':[3,4,8,12],
  'Forbidden Words':[4,5,12,14],'Fact or Fiction':[3,4,12,14],'House of Cards':[2,3,5,8],'Sweet Sort':[3,3,6,10],'Jar Estimate':[3,4,12,14],'Statues':[3,5,12,14],
  'Newspaper Couture':[3,4,7,10],'Lip Reader':[2,4,8,12],'Backwards Spelling':[3,3,7,12],'Hot Potato':[4,6,12,14],'Sardines':[5,7,12,14],
- 'Blind Taste Test':[3,4,8,12],'Domino Run':[2,3,6,10],'Who Said It?':[5,6,12,14]};
+ 'Blind Taste Test':[3,4,8,12],'Domino Run':[2,3,6,10],'Who Said It?':[5,6,12,14],'Cheer Them On':[4,5,12,14]};
 MISSIONS.forEach(function(m){m.size=SIZE[m.title]||[2,3,12,14]});
 function sizeFit(m,n){var z=m.size;if(n>=z[1]&&n<=z[2])return 3;if(n>=z[0]&&n<=z[3])return 2;return 0}
 /* Intro voice-over: one ElevenLabs clip per line, saved as intro-01.mp3 … intro-12.mp3 next to index.html */
@@ -365,7 +369,8 @@ var SECRETS=[
  'Get the group to waste at least 30 seconds arguing about the rules.',
  'Say the word "castle" three times without anyone calling you out.',
  'Get someone to swap places or seats with you.',
- 'Start a chant or a nickname for another player that sticks.'
+ 'Start a chant or a nickname for another player that sticks.',
+ 'In Cheer Them On, cheer at the wrong moment at least once without getting caught.'
 ];
 
 /* ============ LANDING ============ */
