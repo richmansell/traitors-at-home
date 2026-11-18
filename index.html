@@ -216,6 +216,7 @@ input.codein{font:700 30px Cinzel,serif;text-align:center;letter-spacing:.3em;te
 .mcard .ms{font-size:13px;color:#d9cfc0}
 .mtags{display:flex;gap:4px;flex-wrap:wrap}
 .mtag{font-size:11px;padding:2px 6px;border-radius:6px;background:#2c2733;color:var(--muted)}
+.mtag.fit3{background:#1f3a28;color:#9fe0b4}.mtag.fit2{background:#3a3220;color:#f0d9a5}.mtag.fit0{background:#3a1f22;color:#ffb3b6}
 .mtag.okt{background:var(--green);color:#0b1a10;font-weight:700}
 .msh{font-size:12px;color:var(--gold)}
 .tcard{padding:12px 14px}
@@ -324,6 +325,16 @@ var MISSIONS=[
  ['Who Said It?','Match quotes to players','Everyone writes an anonymous fact about themselves. Claudia reads them; the group matches facts to people.',5,'Paper, pens',[['Half matched',4],['All but one',3],['All matched',3]],'Best detective (most correct guesses)']
 ].map(function(a){return {title:a[0],sum:a[1],desc:a[2],mins:a[3],props:a[4],goals:a[5],shield:a[6]}});
 var FREE_MINS=5;
+/* group size per mission: [min, sweet spot from, sweet spot to, max] */
+var SIZE={'Tower of Trust':[3,3,6,10],'The Silent Line-Up':[5,6,12,14],'Keepy-Uppy':[4,5,10,12],'Memory Vault':[3,4,10,12],'The Castle Quiz':[3,4,12,14],
+ 'The Treasure Hunt':[4,6,12,14],'Mind Meld':[4,4,8,12],'Catch & Count':[4,5,10,12],'Human Knot':[6,6,10,10],'Blind Builder':[3,4,8,12],'Anagram Dungeon':[3,3,8,12],
+ 'Shield Tournament':[4,6,12,14],'Cup Stack Relay':[3,4,8,12],'Bottle Flip':[3,4,10,12],'Paper Plane Gauntlet':[3,4,12,14],'Name That Tune':[3,4,12,14],
+ 'Castle Charades':[6,8,12,14],'Pictionary Pods':[6,8,12,14],'Coin in the Cup':[3,4,12,14],'Spoon Relay':[4,6,10,12],'Alphabet Chain':[3,4,8,12],
+ 'Forbidden Words':[4,5,12,14],'Fact or Fiction':[3,4,12,14],'House of Cards':[2,3,5,8],'Sweet Sort':[3,3,6,10],'Jar Estimate':[3,4,12,14],'Statues':[3,5,12,14],
+ 'Newspaper Couture':[3,4,7,10],'Lip Reader':[2,4,8,12],'Backwards Spelling':[3,3,7,12],'Hot Potato':[4,6,12,14],'Sardines':[5,7,12,14],
+ 'Blind Taste Test':[3,4,8,12],'Domino Run':[2,3,6,10],'Who Said It?':[5,6,12,14]};
+MISSIONS.forEach(function(m){m.size=SIZE[m.title]||[2,3,12,14]});
+function sizeFit(m,n){var z=m.size;if(n>=z[1]&&n<=z[2])return 3;if(n>=z[0]&&n<=z[3])return 2;return 0}
 /* Intro voice-over: one ElevenLabs clip per line, saved as intro-01.mp3 … intro-12.mp3 next to index.html */
 var INTRO=[
  ['01','title','Welcome to the castle','Good evening, and welcome to the castle. Tonight, you are no longer friends. You are players. And some of you… are not who you say you are.'],
@@ -789,15 +800,19 @@ function hostMain(){
   }
   function missionPicker(){
     var f=ui.mfilter||'all';
-    var chips=[['all','All'],['todo','Not done'],['quick','Quick ≤3 min'],['noprops','No props']].map(function(c){return '<button class="btn xs '+(f===c[0]?'gold':'ghost')+'" data-act="mfilter" data-id="'+c[0]+'">'+c[1]+'</button>'}).join('');
+    var N=S.started?alive().length:list().length;N=Math.max(N,2);
+    var chips=[['all','All'],['todo','Not done'],['great','Great for '+N],['quick','Quick ≤3 min'],['noprops','No props']].map(function(c){return '<button class="btn xs '+(f===c[0]?'gold':'ghost')+'" data-act="mfilter" data-id="'+c[0]+'">'+c[1]+'</button>'}).join('');
     var nDone=MISSIONS.filter(function(m){return S.done[m.title]}).length;
-    var cards=MISSIONS.map(function(m,i){
-      var dn=S.done[m.title];
+    var idx=MISSIONS.map(function(m,i){return i}).sort(function(a,b){var A=MISSIONS[a],B=MISSIONS[b];
+      return (sizeFit(B,N)-sizeFit(A,N))||((S.done[A.title]?1:0)-(S.done[B.title]?1:0))||((A.props?1:0)-(B.props?1:0))||(a-b)});
+    var cards=idx.map(function(i){var m=MISSIONS[i];
+      var dn=S.done[m.title],fit=sizeFit(m,N);
+      if(f==='great'&&fit<3)return '';
       if(f==='todo'&&dn)return '';if(f==='quick'&&m.mins>3)return '';if(f==='noprops'&&m.props)return '';
       var max=m.goals.reduce(function(a,g){return a+g[1]},0);
       return '<button class="mcard'+(dn?' done':'')+(ui.pick===i?' sel':'')+'" data-act="pick" data-id="'+i+'">'+
         '<div class="mt">'+(dn?'<span class="mtag okt">✓ Done R'+dn+'</span> ':'')+esc(m.title)+'</div><div class="ms">'+esc(m.sum)+'</div>'+
-        '<div class="mtags"><span class="mtag">⏱ '+m.mins+' min</span><span class="mtag">💰 '+esc(money(max))+'</span><span class="mtag">'+(m.props?'🧰 '+esc(m.props):'No props')+'</span></div>'+
+        '<div class="mtags"><span class="mtag fit'+fit+'">👥 '+(fit===3?'Great for '+N:fit===2?'OK for '+N:'Poor fit for '+N)+' · best '+m.size[1]+'–'+m.size[2]+'</span><span class="mtag">⏱ '+m.mins+' min</span><span class="mtag">💰 '+esc(money(max))+'</span><span class="mtag">'+(m.props?'🧰 '+esc(m.props):'No props')+'</span></div>'+
         (m.shield?'<div class="msh">🛡 '+esc(m.shield)+'</div>':'')+'</button>';
     }).join('');
     return '<div class="row tpre" style="margin:6px 0">'+chips+'<span class="muted small" style="flex:1;text-align:right">'+nDone+'/'+MISSIONS.length+' played</span></div>'+
@@ -1210,7 +1225,9 @@ function tvMain(){
   }
 
   /* ---- narrated intro ---- */
-  var intro={on:false,i:0,token:0,audio:null};
+  var intro={on:false,i:0,token:0,audio:null},introFiles={};
+  /* intro-audio.json (optional) maps scene ids to clip file names, e.g. {"01":"ElevenLabs_….mp3"} */
+  try{fetch('intro-audio.json',{cache:'no-store'}).then(function(r){return r.ok?r.json():{}}).then(function(j){if(j&&typeof j==='object')introFiles=j}).catch(function(){})}catch(e){}
   function tellHost(){try{if(conn&&conn.open)conn.send({t:'introDone'})}catch(e){}}
   function stopIntro(silent){intro.token++;if(intro.audio){try{intro.audio.pause()}catch(e){}}intro.audio=null;
     if(intro.on){intro.on=false;ov.className='';ov.hidden=true;ov.innerHTML='';if(!silent)tellHost();render()}}
@@ -1223,7 +1240,7 @@ function tvMain(){
     runDemo(seg.demo,my);
     var done=false,fallback=Math.max(5000,seg.text.split(/\s+/).length/2.4*1000+1200);
     function fin(){if(done||my!==intro.token)return;done=true;intro.i++;setTimeout(function(){introStep(my)},900)}
-    try{var a=new Audio('intro-'+seg.id+'.mp3');intro.audio=a;a.onended=fin;a.onerror=function(){setTimeout(fin,fallback)};
+    try{var a=new Audio(introFiles[seg.id]||('intro-'+seg.id+'.mp3'));intro.audio=a;a.onended=fin;a.onerror=function(){setTimeout(fin,fallback)};
       var pr=a.play();if(pr&&pr.catch)pr.catch(function(){setTimeout(fin,fallback)})}catch(e){setTimeout(fin,fallback)}
   }
   document.addEventListener('keydown',function(e){if(e.key==='Escape'&&intro.on)stopIntro(false);else if((e.key==='i'||e.key==='I')&&!intro.on&&started)playIntro()});
