@@ -1169,7 +1169,7 @@ function tvMain(){
     return '<div class="tvcard"><div class="tvlabel" style="text-align:center">'+(l<=0?'Time\'s up':'Time left')+'</div><div class="tvtimer'+(l<=0?' done':l<=10000&&view.timer.running?' low':'')+'" id="tvtimer">'+mmss(l)+'</div></div>'}
   setInterval(function(){var el=document.getElementById('tvtimer');if(el&&view&&view.timer&&view.timer.running){var l=tLeftTv();el.textContent=mmss(l);el.className='tvtimer'+(l<=0?' done':l<=10000?' low':'')}},250);
 
-  function start(){unlockAudio();keepAwake();try{var d=document.documentElement;(d.requestFullscreen||d.webkitRequestFullscreen).call(d)}catch(e){}started=true;ov.hidden=true;ov.innerHTML='';render()}
+  function start(){unlockAudio();keepAwake();preloadIntro();try{var d=document.documentElement;(d.requestFullscreen||d.webkitRequestFullscreen).call(d)}catch(e){}started=true;ov.hidden=true;ov.innerHTML='';render()}
   ov.hidden=false;ov.innerHTML='<div class="result"><div class="bigword" style="color:var(--gold2);font-size:7vw">The Traitors</div><p class="sub">Room '+esc(ROOM)+' · TV screen</p><button class="btn gold big" id="tvgo" style="max-width:520px;margin-top:3vw">Click to start (sound and full screen)</button><p class="muted small">Plug the laptop into your speaker for the heartbeat.</p></div>';
   ov.onclick=function(){if(!started){ov.onclick=null;start()}};
 
@@ -1231,17 +1231,43 @@ function tvMain(){
   function tellHost(){try{if(conn&&conn.open)conn.send({t:'introDone'})}catch(e){}}
   function stopIntro(silent){intro.token++;if(intro.audio){try{intro.audio.pause()}catch(e){}}intro.audio=null;
     if(intro.on){intro.on=false;ov.className='';ov.hidden=true;ov.innerHTML='';if(!silent)tellHost();render()}}
-  function playIntro(){stopIntro(true);intro.on=true;intro.i=0;var my=++intro.token;ov.hidden=false;ov.className='intro';introStep(my)}
+  /* download every clip up front so voice and animation stay in step */
+  var clips={},clipsLoaded=0,preloading=false;
+  function clipSrc(id){return introFiles[id]||('intro-'+id+'.mp3')}
+  function preloadIntro(){
+    if(preloading||typeof fetch==='undefined'||typeof URL==='undefined'||!URL.createObjectURL)return;preloading=true;
+    INTRO.forEach(function(seg){
+      fetch(clipSrc(seg.id)).then(function(r){if(!r.ok)throw 0;return r.blob()})
+        .then(function(b){clips[seg.id]=URL.createObjectURL(b)}).catch(function(){clips[seg.id]=null})
+        .then(function(){clipsLoaded++;var e=document.getElementById('iload');if(e)e.textContent=clipsLoaded+' / '+INTRO.length});
+    });
+  }
+  function playIntro(){
+    stopIntro(true);intro.on=true;intro.i=0;var my=++intro.token;ov.hidden=false;ov.className='intro';
+    if(!preloading)preloadIntro();
+    var t0=Date.now();
+    (function wait(){
+      if(my!==intro.token)return;
+      if(!preloading||clipsLoaded>=INTRO.length||Date.now()-t0>15000){introStep(my);return}
+      ov.innerHTML='<div class="iwrap"><div class="istage"><div class="center"><div class="ilogo" style="font-size:6vw">The Traitors</div><p class="isub">Loading the voice-over… <span id="iload">'+clipsLoaded+' / '+INTRO.length+'</span></p></div></div></div>';
+      setTimeout(wait,300);
+    })();
+  }
   function introStep(my){
     if(my!==intro.token)return;var seg=INTRO[intro.i];
     if(!seg){intro.on=false;ov.className='';ov.hidden=true;ov.innerHTML='';tellHost();render();return}
     ov.innerHTML='<div class="iwrap"><div class="iprog">'+(intro.i+1)+' / '+INTRO.length+'</div><div class="iskip">Esc to stop</div><div class="istage" id="istage"></div>'+
       '<div class="icap"><div class="ititle2">'+esc(seg.title)+'</div><p class="isub">'+esc(seg.text)+'</p></div></div>';
-    runDemo(seg.demo,my);
-    var done=false,fallback=Math.max(5000,seg.text.split(/\s+/).length/2.4*1000+1200);
-    function fin(){if(done||my!==intro.token)return;done=true;intro.i++;setTimeout(function(){introStep(my)},900)}
-    try{var a=new Audio(introFiles[seg.id]||('intro-'+seg.id+'.mp3'));intro.audio=a;a.onended=fin;a.onerror=function(){setTimeout(fin,fallback)};
-      var pr=a.play();if(pr&&pr.catch)pr.catch(function(){setTimeout(fin,fallback)})}catch(e){setTimeout(fin,fallback)}
+    var done=false,began=false,fallback=Math.max(5000,seg.text.split(/\s+/).length/2.4*1000+1200);
+    function begin(){if(began||my!==intro.token)return;began=true;runDemo(seg.demo,my)}
+    function fin(){if(done||my!==intro.token)return;done=true;begin();intro.i++;setTimeout(function(){introStep(my)},900)}
+    function silent(){begin();setTimeout(fin,fallback)}
+    var src=clips[seg.id]===null?null:(clips[seg.id]||clipSrc(seg.id));
+    if(!src){silent();return}
+    try{var a=new Audio(src);intro.audio=a;a.preload='auto';
+      a.onplaying=begin;a.onended=fin;a.onerror=function(){if(!began)silent();else setTimeout(fin,1500)};setTimeout(fin,fallback+25000);
+      setTimeout(function(){if(!began&&my===intro.token){begin()}},2500); /* never leave a scene frozen */
+      var pr=a.play();if(pr&&pr.catch)pr.catch(function(){if(!began)silent()})}catch(e){silent()}
   }
   document.addEventListener('keydown',function(e){if(e.key==='Escape'&&intro.on)stopIntro(false);else if((e.key==='i'||e.key==='I')&&!intro.on&&started)playIntro()});
   function phone(inner,cls){return '<div class="iphone '+(cls||'')+'"><div class="iscr">'+inner+'</div></div>'}
