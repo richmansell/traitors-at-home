@@ -141,6 +141,55 @@ input.codein{font:700 30px Cinzel,serif;text-align:center;letter-spacing:.3em;te
 .tvmode .tally{font-size:2vw;padding:.8vw 0}
 .tvmode .result{max-width:none}
 .tvlist{font-size:1.6vw;padding:.4vw 0}
+#overlay.intro{padding:0;background:radial-gradient(ellipse at 50% 30%,#2a1f2e 0%,#07060a 70%)}
+.iwrap{position:absolute;inset:0;display:grid;grid-template-rows:1fr auto;padding:3vw 4vw 2.5vw}
+.istage{display:flex;align-items:center;justify-content:center;gap:4vw;min-height:0;position:relative}
+.icap{text-align:center;max-width:78vw;margin:0 auto;animation:rise .8s ease-out}
+.ititle2{font-family:Cinzel,serif;font-weight:900;color:var(--gold2);font-size:3.4vw;letter-spacing:.04em}
+.isub{font-size:2vw;color:#e3dacb;line-height:1.35;margin-top:.8vw}
+.iprog{position:absolute;top:1.6vw;right:2vw;font-size:1.1vw;color:var(--muted);letter-spacing:.15em}
+.iskip{position:absolute;top:1.6vw;left:2vw;font-size:1.1vw;color:var(--muted)}
+.ilogo{font-family:Cinzel,serif;font-weight:900;font-size:11vw;color:var(--gold2);text-shadow:0 0 4vw rgba(236,211,148,.35);animation:glow 3s ease-in-out infinite, rise 1.6s ease-out}
+@keyframes glow{50%{text-shadow:0 0 6vw rgba(236,211,148,.6)}}
+.icandles{position:absolute;bottom:0;left:0;right:0;display:flex;justify-content:space-around}
+.icandle{width:1.4vw;height:8vw;background:linear-gradient(#efe2c4,#b9a77f);border-radius:.3vw;position:relative}
+.icandle:before{content:"";position:absolute;left:50%;top:-2.4vw;width:1.2vw;height:2.2vw;margin-left:-.6vw;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;background:radial-gradient(#fff6c8,#ffb43a 60%,transparent 70%);animation:flick .15s infinite alternate;box-shadow:0 0 3vw 1vw rgba(255,170,60,.35)}
+@keyframes flick{to{transform:scale(.92,1.06) translateX(.08vw);opacity:.9}}
+.iphone{width:17vw;height:32vw;border-radius:2.4vw;border:.5vw solid #2b2532;background:#000;box-shadow:0 2vw 5vw rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;text-align:center;padding:1.5vw;position:relative;animation:rise .6s ease-out}
+.iscr{width:100%}
+.iscr .w{font-family:Cinzel,serif;font-weight:900;font-size:2.6vw;line-height:1.1;animation:rise .5s ease-out}
+.iscr .n{font-family:Cinzel,serif;font-size:9vw;color:#fff;animation:pulse 1s ease-out}
+.iscr .s{font-size:1.2vw;color:#cfc6b8;margin-top:.6vw}
+.gold{color:var(--gold2)!important;text-shadow:0 0 2vw rgba(236,211,148,.4)}.red{color:var(--red2)!important;text-shadow:0 0 2vw rgba(229,72,79,.5)}.grey{color:#9da3ad!important}
+.ihold{margin-top:1vw;border:.15vw dashed #5a4c66;border-radius:1vw;padding:1vw;font-size:1.1vw;color:var(--muted)}
+.ifinger{position:absolute;bottom:6vw;left:50%;width:4vw;height:4vw;margin-left:-2vw;border-radius:50%;background:rgba(236,211,148,.25);border:.2vw solid var(--gold2);animation:press 3s ease-in-out infinite}
+@keyframes press{0%,100%{transform:scale(1);opacity:.4}20%,70%{transform:scale(.8);opacity:1}}
+.icard{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:1.4vw;padding:2vw 2.4vw;min-width:36vw;animation:rise .6s ease-out}
+.icard .goal{font-size:1.8vw}.icard .goal .tick{width:2.2vw;height:2.2vw;font-size:1.4vw}
+.ipot{font-family:Cinzel,serif;font-weight:900;font-size:8vw;color:var(--gold2);line-height:1;transition:color .3s}
+.ipot.hit{color:var(--red2);animation:shake .5s}
+@keyframes shake{20%,60%{transform:translateX(-1vw)}40%,80%{transform:translateX(1vw)}}
+.ibadge{font-family:Cinzel,serif;font-size:3vw;font-weight:900;animation:rise .5s ease-out}
+.ishield{font-size:16vw;line-height:1;animation:shieldp 2.4s ease-in-out infinite;filter:drop-shadow(0 0 3vw rgba(236,211,148,.5))}
+@keyframes shieldp{50%{transform:scale(1.08);filter:drop-shadow(0 0 5vw rgba(236,211,148,.8))}}
+.ivotes{width:44vw}
+.ivrow{display:flex;align-items:center;gap:1vw;font-size:1.9vw;margin:.7vw 0}
+.ivrow b{width:9vw}
+.ivbar{height:2vw;background:linear-gradient(90deg,#8a6a2c,var(--gold2));border-radius:.4vw;width:0;transition:width .8s ease-out}
+.ivrow.out b{color:var(--red2)}
+.inight{position:absolute;inset:0;background:#000;opacity:0;transition:opacity 2s}
+.inight.on{opacity:.85}
+.imoon{position:absolute;top:2vw;right:12vw;width:8vw;height:8vw;border-radius:50%;box-shadow:-1.6vw 1vw 0 0 #d7d2e0;transform:translateY(10vw);opacity:0;transition:all 2.5s ease-out}
+.imoon.on{transform:none;opacity:1}
+.ibig{font-family:Cinzel,serif;font-weight:900;font-size:5vw;position:relative;z-index:2;text-align:center;animation:rise .7s ease-out}
+.ipoint{font-size:8vw;position:relative;z-index:2;animation:pointp 1.2s ease-in-out infinite}
+@keyframes pointp{50%{transform:translateX(2vw)}}
+.iwin{display:flex;gap:3vw}
+.iwin .icard{min-width:0;width:34vw;text-align:center}
+.irules{display:flex;flex-direction:column;gap:2vw}
+.irule{font-family:Cinzel,serif;font-size:3.6vw;color:var(--gold2);opacity:0;transform:translateX(-3vw);transition:all .8s ease-out}
+.irule.on{opacity:1;transform:none}
+.ihidden{opacity:0}
 .mdock{position:fixed;right:12px;bottom:12px;z-index:60;width:min(380px,calc(100vw - 24px));background:var(--panel2);border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.55)}
 .mbar{display:flex;gap:6px;align-items:center;padding:8px}
 .mbar .mnow{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:12px;color:var(--muted)}
@@ -275,6 +324,22 @@ var MISSIONS=[
  ['Who Said It?','Match quotes to players','Everyone writes an anonymous fact about themselves. Claudia reads them; the group matches facts to people.',5,'Paper, pens',[['Half matched',4],['All but one',3],['All matched',3]],'Best detective (most correct guesses)']
 ].map(function(a){return {title:a[0],sum:a[1],desc:a[2],mins:a[3],props:a[4],goals:a[5],shield:a[6]}});
 var FREE_MINS=5;
+/* Intro voice-over: one ElevenLabs clip per line, saved as intro-01.mp3 … intro-12.mp3 next to index.html */
+var INTRO=[
+ ['01','title','Welcome to the castle','Good evening, and welcome to the castle. Tonight, you are no longer friends. You are players. And some of you… are not who you say you are.'],
+ ['02','roles','Faithful or Traitor','In a moment, your phone will tell you who you are. Most of you will be Faithful. But a small, select few will be Traitors. When it happens: do not react. Not a smile. Not a flicker.'],
+ ['03','hold','Guard your phone','Keep your phone close to your chest. If you forget who you are, press and hold the button, and let go to hide it. Never show your screen to anyone.'],
+ ['04','mission','Missions','Throughout the evening, you will face missions. Complete them together, and money flows into the prize fund. Every goal you achieve makes the pot a little bigger.'],
+ ['05','sabotage','Sabotage','But beware. The Traitors may receive secret orders. Pull them off, and money vanishes from the fund, straight into the Traitors’ own stash. Theirs to keep, win or lose.'],
+ ['06','shield','The Shield','Some missions offer a Shield. Win it, and you cannot be murdered that night. Whether you tell anyone… is up to you.'],
+ ['07','roundtable','The Round Table','Then we gather at the Round Table. Discuss. Accuse. Defend. When voting opens, choose who to banish on your phone. The player with the most votes must leave, and their true identity will be revealed.'],
+ ['08','night','Night falls','When night falls, everyone closes their eyes. The Traitors will wake, and silently choose their victim. Or they may recruit a Faithful to their side. If you have been murdered, you may keep your eyes open. But ghosts stay silent.'],
+ ['09','morning','Breakfast','At breakfast, your phone will tell you what happened in the night. Someone may have been murdered. No one may have been. Or you may discover… you have been recruited.'],
+ ['10','win','How to win','If the Faithful banish every Traitor, they share the prize fund. But if even one Traitor survives to the end… they take it all.'],
+ ['11','rules','The rules of the castle','Three rules. Never show your phone. Ghosts never speak. And the host’s word is final.'],
+ ['12','begin','Enter the castle','Take out your phones. Scan the code. Enter the castle. The game… begins now.']
+].map(function(a){return {id:a[0],demo:a[1],title:a[2],text:a[3]}});
+var musicLevel=null;
 var SECRETS=[
  'Subtly sabotage ONE goal of this mission without getting caught.',
  'Get a Faithful to say the word "banana" during the mission.',
@@ -329,7 +394,7 @@ function hostMain(){
   if(S.stash==null) S.stash=0;
   if(!S.done) S.done={};
   LS.set('traitors-last-host',ROOM);
-  var tvs=[];
+  var tvs=[],introOn=false;
   var conns={}, allConns=[], peer=null, peerStatus='Starting…', peerLive=false;
   var ui={tab:null,hideRoles:false,steal:5,pick:null,mfilter:'all',draft:{title:'',desc:'',goals:[['',2]],secret:'',mins:3,shield:''},banishPick:'',murder:'',recruit:'',winner:'auto'};
 
@@ -374,6 +439,7 @@ function hostMain(){
     c.on('open',function(){try{c.send({t:'welcome',started:S.started})}catch(e){}});
     c.on('data',function(m){
       if(!m||typeof m!=='object')return;
+      if(m.t==='introDone'){introOn=false;if(musicLevel)musicLevel(1);render();return}
       if(m.t==='hello'&&m.tv){if(tvs.indexOf(c)<0)tvs.push(c);try{c.send({t:'tv',v:tvView()})}catch(e){}render();return}
       if(m.t==='hello'){
         var id=String(m.id||'').slice(0,40), name=String(m.name||'').trim().slice(0,20);
@@ -579,6 +645,9 @@ function hostMain(){
       S.pot-=amt;S.stash=(S.stash||0)+amt;S.mission.secretDone=true;S.event={seq:++S.seq,kind:'sabotage',amount:amt};revealSound();log('Sabotage: '+money(amt)+' stolen');commit()},
     shield:function(id){var p=P(id);if(!p||!p.alive)return;p.shield=!p.shield;
       if(p.shield){S.event={seq:++S.seq,kind:'shield',target:id};log(p.name+' won a Shield')}else log(p.name+'\'s Shield removed');commit()},
+    intro:function(){if(!tvs.length){alert('Open the TV screen on the laptop first (and click it once).');return}
+      tvs.forEach(function(c){try{c.send({t:'tvcmd',cmd:'intro'})}catch(e){}});introOn=true;if(musicLevel)musicLevel(0.15);log('Intro started on TV');render()},
+    introStop:function(){tvs.forEach(function(c){try{c.send({t:'tvcmd',cmd:'stop'})}catch(e){}});introOn=false;if(musicLevel)musicLevel(1);render()},
     tset:function(sec){if(!S.timer)return;S.timer.total=S.timer.left=(+sec)*1000;S.timer.endAt=null;commit()},
     tgo:function(){var t=S.timer;unlockAudio();
       if(t.endAt){t.left=tLeft();t.endAt=null}else{if(t.left<=0)t.left=t.total;t.endAt=Date.now()+t.left;log('Timer started: '+mmss(t.left))}
@@ -618,7 +687,8 @@ function hostMain(){
     return '<div class="hbar"><div><span class="brand">The Traitors</span> <span class="muted small">· Claudia\'s desk</span></div>'+
       '<div class="status" style="gap:14px"><span>Room <span class="roomcode">'+ROOM+'</span></span>'+
       '<span><span class="dot '+(peerLive?'on':'warn')+'"></span> '+esc(peerLive?'Live':peerStatus)+'</span>'+
-      '<span>'+on+'/'+list().length+' phones</span><a class="btn xs ghost" href="'+esc(tvUrl())+'" target="_blank" rel="noopener">📺 TV screen'+(tvs.length?' ●':'')+'</a></div></div>'+
+      '<span>'+on+'/'+list().length+' phones</span><a class="btn xs ghost" href="'+esc(tvUrl())+'" target="_blank" rel="noopener">📺 TV screen'+(tvs.length?' ●':'')+'</a>'+
+      (tvs.length?(introOn?'<button class="btn xs red" data-act="introStop">⏹ Stop intro</button>':'<button class="btn xs gold" data-act="intro">🎬 Play intro</button>'):'')+'</div></div>'+
       (!peerLive&&peerStatus.length>20?'<div class="warnbox">'+esc(peerStatus)+'</div>':'');
   }
   function drawQR(){
@@ -635,7 +705,7 @@ function hostMain(){
       '<div class="card center"><div class="label">Everyone: scan or open this link</div><div class="qrbox" id="qr"></div>'+
       '<div class="link">'+esc(joinUrl())+'</div><div class="row"><button class="btn sm" data-act="share">Share link</button><button class="btn sm ghost" data-act="copy">Copy</button></div>'+
       '<p class="muted small">Or go to the same page and type the code <b class="roomcode">'+ROOM+'</b>.</p>'+
-      '<p class="small" style="margin-top:10px">📺 <b>TV screen:</b> open this on the laptop <span class="link" style="display:block">'+esc(tvUrl())+'</span>'+(tvs.length?'<span class="ok">TV connected</span>':'<span class="muted">No TV connected yet</span>')+'</p>'+
+      '<p class="small" style="margin-top:10px">📺 <b>TV screen:</b> open this on the laptop <span class="link" style="display:block">'+esc(tvUrl())+'</span>'+(tvs.length?'<span class="ok">TV connected</span> · use 🎬 Play intro at the top to explain the game':'<span class="muted">No TV connected yet</span>')+'</p>'+
       (/^(localhost|127\.)/.test(location.hostname)?'<div class="warnbox">You opened this on <b>localhost</b>, so phones can\'t use this link. Open the host page using your computer\'s Wi-Fi IP address (for example http://192.168.1.20:8000) instead.</div>':'')+
       '</div>'+
       '<div class="card"><h3>Prize fund settings</h3><div class="row"><div class="field"><div class="label">Unit</div><input type="text" id="set-cur" value="'+esc(S.cur)+'" data-change="cur" placeholder="£ or sweets"></div>'+
@@ -849,6 +919,7 @@ function hostMain(){
     });
     $('mvol').addEventListener('input',function(){LS.set('traitors-yt-vol',vol());if(ready&&!ducked)player.setVolume(vol())});
     $('mduck').addEventListener('change',function(){LS.set('traitors-yt-duck',this.checked)});
+    musicLevel=function(f){try{if(!ready)return;ducked=f<1;player.setVolume(Math.round(vol()*f))}catch(e){}};
     duckMusic=function(){try{if(!ready||!$('mduck').checked||player.getPlayerState()!==1)return;ducked=true;player.setVolume(Math.round(vol()*0.2));
       setTimeout(function(){ducked=false;try{player.setVolume(vol())}catch(e){}},9000)}catch(e){}};
     window.onYouTubeIframeAPIReady=build;
@@ -1063,7 +1134,9 @@ function tvMain(){
     if(!peer||!peer.open)return;connecting=Date.now();var old=conn;conn=null;if(old){try{old.close()}catch(e){}}
     var c=peer.connect(PEER_PREFIX+ROOM,{reliable:true});conn=c;
     c.on('open',function(){if(conn!==c)return;lastMsg=Date.now();live=true;try{c.send({t:'hello',tv:true})}catch(e){}});
-    c.on('data',function(m){if(conn!==c)return;lastMsg=Date.now();live=true;if(m&&m.t==='tv'){view=m.v;view._recv=Date.now();render()}});
+    c.on('data',function(m){if(conn!==c)return;lastMsg=Date.now();live=true;if(!m)return;
+      if(m.t==='tv'){view=m.v;view._recv=Date.now();render()}
+      else if(m.t==='tvcmd'){if(m.cmd==='intro'){if(!started)start();playIntro()}else if(m.cmd==='stop')stopIntro(false)}});
     c.on('close',function(){if(conn===c){live=false;connecting=0}});c.on('error',function(){});
   }
   function tick(){
@@ -1133,7 +1206,89 @@ function tvMain(){
       h=head+'<div class="tvgrid"><div>'+main+'</div><div>'+timerHtml()+potHtml(v)+roster(v)+'</div></div>';
     }
     app.innerHTML='<div class="tvwrap">'+h+'</div>';
-    if(started&&v.event&&v.event.seq>seen&&!showing)playEvent(v.event);
+    if(started&&v.event&&v.event.seq>seen&&!showing&&!intro.on)playEvent(v.event);
+  }
+
+  /* ---- narrated intro ---- */
+  var intro={on:false,i:0,token:0,audio:null};
+  function tellHost(){try{if(conn&&conn.open)conn.send({t:'introDone'})}catch(e){}}
+  function stopIntro(silent){intro.token++;if(intro.audio){try{intro.audio.pause()}catch(e){}}intro.audio=null;
+    if(intro.on){intro.on=false;ov.className='';ov.hidden=true;ov.innerHTML='';if(!silent)tellHost();render()}}
+  function playIntro(){stopIntro(true);intro.on=true;intro.i=0;var my=++intro.token;ov.hidden=false;ov.className='intro';introStep(my)}
+  function introStep(my){
+    if(my!==intro.token)return;var seg=INTRO[intro.i];
+    if(!seg){intro.on=false;ov.className='';ov.hidden=true;ov.innerHTML='';tellHost();render();return}
+    ov.innerHTML='<div class="iwrap"><div class="iprog">'+(intro.i+1)+' / '+INTRO.length+'</div><div class="iskip">Esc to stop</div><div class="istage" id="istage"></div>'+
+      '<div class="icap"><div class="ititle2">'+esc(seg.title)+'</div><p class="isub">'+esc(seg.text)+'</p></div></div>';
+    runDemo(seg.demo,my);
+    var done=false,fallback=Math.max(5000,seg.text.split(/\s+/).length/2.4*1000+1200);
+    function fin(){if(done||my!==intro.token)return;done=true;intro.i++;setTimeout(function(){introStep(my)},900)}
+    try{var a=new Audio('intro-'+seg.id+'.mp3');intro.audio=a;a.onended=fin;a.onerror=function(){setTimeout(fin,fallback)};
+      var pr=a.play();if(pr&&pr.catch)pr.catch(function(){setTimeout(fin,fallback)})}catch(e){setTimeout(fin,fallback)}
+  }
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&intro.on)stopIntro(false);else if((e.key==='i'||e.key==='I')&&!intro.on&&started)playIntro()});
+  function phone(inner,cls){return '<div class="iphone '+(cls||'')+'"><div class="iscr">'+inner+'</div></div>'}
+  function runDemo(kind,my){
+    var st=document.getElementById('istage');if(!st)return;
+    var at=function(ms,fn){setTimeout(function(){if(my===intro.token){var e=document.getElementById('istage');if(e)fn(e)}},ms)};
+    var set=function(id,html){var e=document.getElementById(id);if(e)e.innerHTML=html};
+    var money=function(n){return fmtMoney(view?view.cur:'£',n)};
+    if(kind==='title'){st.innerHTML='<div class="ilogo">The Traitors</div><div class="icandles">'+'<div class="icandle"></div>'.repeat(7)+'</div>'}
+    else if(kind==='roles'||kind==='morning'){
+      var n=kind==='roles'?2:3;var h='';for(var i=0;i<n;i++)h+=phone('<div id="ph'+i+'"><div class="w" style="color:#fff">Do not react.</div></div>');st.innerHTML=h;
+      [3,2,1].forEach(function(k,j){at(1600+j*900,function(){for(var i=0;i<n;i++)set('ph'+i,'<div class="s">You will be told in</div><div class="n">'+k+'</div>')})});
+      at(4400,function(){
+        if(kind==='roles'){set('ph0','<div class="s">You are…</div><div class="w gold">Faithful</div>');set('ph1','<div class="s">You are…</div><div class="w red">Traitor</div><div class="s">Fellow Traitors:<br><b style="color:#ffd9da">Sam</b></div>')}
+        else{set('ph0','<div class="s">Last night…</div><div class="w grey">Sam</div><div class="s">was murdered.</div>');set('ph1','<div class="s">Last night…</div><div class="w" style="color:#fff">No one</div><div class="s">was murdered.</div>');set('ph2','<div class="s">In the night…</div><div class="w red">Recruited</div><div class="s">You are now a Traitor.</div>')}
+      });
+    }
+    else if(kind==='hold'){
+      st.innerHTML=phone('<div id="hp"><div class="w" style="font-size:1.8vw;color:var(--gold2)">Round 1</div><div class="ihold">Press and hold<br>to see your role</div></div>')+'<div class="ifinger"></div>';
+      var loop=function(t){at(t+600,function(){set('hp','<div class="s">You are</div><div class="w gold">Faithful</div><div class="s">Let go to hide</div>')});
+        at(t+2100,function(){set('hp','<div class="w" style="font-size:1.8vw;color:var(--gold2)">Round 1</div><div class="ihold">Press and hold<br>to see your role</div>')})};
+      for(var t=0;t<30000;t+=3000)loop(t);
+    }
+    else if(kind==='mission'){
+      var G=[['Tower stands for 10 seconds',4],['Taller than 1 metre',4],['Taller than the tallest player',2]];
+      st.innerHTML='<div class="icard"><div class="tvlabel">Mission</div><div class="tvbig" style="font-size:3vw">Tower of Trust</div>'+G.map(function(g,i){return '<div class="goal" id="g'+i+'"><span class="tick"></span><span>'+g[0]+'</span><span class="val">+'+money(g[1])+'</span></div>'}).join('')+'</div>'+
+        '<div class="center"><div class="tvlabel">Prize fund</div><div class="ipot" id="ipot">'+money(0)+'</div></div>';
+      var pot=0;G.forEach(function(g,i){at(1800+i*1700,function(){var e=document.getElementById('g'+i);if(e){e.className='goal done';e.querySelector('.tick').textContent='✓'}pot+=g[1];set('ipot',money(pot))})});
+    }
+    else if(kind==='sabotage'){
+      st.innerHTML='<div class="center"><div class="tvlabel">Prize fund</div><div class="ipot" id="ipot">'+money(12)+'</div><div id="sab" class="ibadge" style="height:4vw"></div></div><div class="center ihidden" id="stash"><div class="tvlabel">Traitors\' stash</div><div class="ipot red" style="font-size:6vw">'+money(5)+'</div></div>';
+      at(2200,function(){var p=document.getElementById('ipot');if(p){p.className='ipot hit';p.textContent=money(7)}set('sab','<span class="red">Sabotage! −'+money(5)+'</span>')});
+      at(3600,function(){var e=document.getElementById('stash');if(e)e.className='center';e&&(e.style.animation='rise .6s ease-out')});
+    }
+    else if(kind==='shield'){st.innerHTML='<div class="center"><div class="ishield">🛡</div><div class="ibadge gold" style="margin-top:2vw">Safe from murder tonight</div></div>'}
+    else if(kind==='roundtable'){
+      var P=[['Jo',5],['Sam',2],['Priya',1],['Leo',1],['Mia',0]];
+      st.innerHTML='<div class="ivotes">'+P.map(function(p,i){return '<div class="ivrow" id="vr'+i+'"><b>'+p[0]+'</b><div class="ivbar" id="vb'+i+'"></div><span id="vc'+i+'"></span></div>'}).join('')+'</div><div class="center" id="vout" style="width:28vw"></div>';
+      var c=P.map(function(){return 0}),order=[0,1,0,2,0,3,0,1,0];
+      order.forEach(function(k,j){at(1200+j*650,function(){c[k]++;var b=document.getElementById('vb'+k);if(b)b.style.width=(c[k]*5)+'vw';set('vc'+k,c[k])})});
+      at(1200+order.length*650+800,function(){var r=document.getElementById('vr0');if(r)r.className='ivrow out';set('vout','<div class="s" style="font-size:2vw;color:#cfc6b8">Jo was…</div>')});
+      at(1200+order.length*650+2600,function(){set('vout','<div class="s" style="font-size:2vw;color:#cfc6b8">Jo was…</div><div class="w gold" style="font-family:Cinzel,serif;font-weight:900;font-size:5vw">Faithful</div>')});
+    }
+    else if(kind==='night'){
+      st.innerHTML='<div class="inight" id="nd"></div><div class="imoon" id="nm"></div><div class="center" style="position:relative;z-index:2"><div id="nt" class="ibig" style="color:#cfc8d8">Everyone, close your eyes</div><div id="np"></div></div>';
+      var cls=function(id,c){var e=document.getElementById(id);if(e)e.className=c};
+      at(200,function(){cls('nd','inight on');cls('nm','imoon on')});
+      at(4500,function(){set('nt','<span class="red">Traitors, open your eyes</span>')});
+      at(8000,function(){set('nt','<span class="red">Choose your victim</span>');set('np','<div class="ipoint">👉</div>')});
+      at(12500,function(){set('nt','<span class="grey">Ghosts may watch… in silence</span>')});
+    }
+    else if(kind==='win'){
+      st.innerHTML='<div class="iwin"><div class="icard" id="w1"><div class="ibadge gold">Faithful win</div><p class="tvtext">Banish every Traitor.<br>Share the prize fund.</p></div><div class="icard ihidden" id="w2"><div class="ibadge red">Traitors win</div><p class="tvtext">One Traitor survives to the end.<br>They take it all.</p></div></div>';
+      at(3800,function(){var e=document.getElementById('w2');if(e)e.className='icard'});
+    }
+    else if(kind==='rules'){
+      var L=['📵 Never show your phone','👻 Ghosts never speak','⚖️ The host’s word is final'];
+      st.innerHTML='<div class="irules">'+L.map(function(l,i){return '<div class="irule" id="ru'+i+'">'+l+'</div>'}).join('')+'</div>';
+      L.forEach(function(_,i){at(1000+i*1800,function(){var e=document.getElementById('ru'+i);if(e)e.className='irule on'})});
+    }
+    else if(kind==='begin'){
+      var qr='';try{if(view&&typeof qrcode!=='undefined'){var q=qrcode(0,'M');q.addData(view.joinUrl);q.make();qr=q.createSvgTag(6,2)}}catch(e){}
+      st.innerHTML='<div class="tvqr" style="width:22vw">'+qr+'</div><div><div class="ibig gold" style="text-align:left">Enter the castle</div><p class="tvtext">Room code <span class="roomcode" style="font-size:3vw">'+esc(ROOM)+'</span></p></div>';
+    }
   }
   render();makePeer();
 }
