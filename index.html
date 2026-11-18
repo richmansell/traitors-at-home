@@ -143,19 +143,19 @@ input.codein{font:700 30px Cinzel,serif;text-align:center;letter-spacing:.3em;te
 .tvlist{font-size:1.6vw;padding:.4vw 0}
 #overlay.intro{padding:0;background:radial-gradient(ellipse at 50% 30%,#2a1f2e 0%,#07060a 70%)}
 .iwrap{position:absolute;inset:0;display:grid;grid-template-rows:1fr auto;padding:3vw 4vw 2.5vw}
-.istage{display:flex;align-items:center;justify-content:center;gap:4vw;min-height:0;position:relative}
+.istage{display:flex;align-items:center;justify-content:center;gap:4vw;min-height:0;position:relative;overflow:hidden;padding-bottom:1.5vw}
 .icap{text-align:center;max-width:78vw;margin:0 auto;animation:rise .8s ease-out}
 .ititle2{font-family:Cinzel,serif;font-weight:900;color:var(--gold2);font-size:3.4vw;letter-spacing:.04em}
 .isub{font-size:2vw;color:#e3dacb;line-height:1.35;margin-top:.8vw}
 .iprog{position:absolute;top:1.6vw;right:2vw;font-size:1.1vw;color:var(--muted);letter-spacing:.15em}
 .iskip{position:absolute;top:1.6vw;left:2vw;font-size:1.1vw;color:var(--muted)}
-.ilogo{font-family:Cinzel,serif;font-weight:900;font-size:11vw;color:var(--gold2);text-shadow:0 0 4vw rgba(236,211,148,.35);animation:glow 3s ease-in-out infinite, rise 1.6s ease-out}
+.ilogo{font-family:Cinzel,serif;font-weight:900;font-size:min(11vw,22vh);color:var(--gold2);text-shadow:0 0 4vw rgba(236,211,148,.35);animation:glow 3s ease-in-out infinite, rise 1.6s ease-out}
 @keyframes glow{50%{text-shadow:0 0 6vw rgba(236,211,148,.6)}}
 .icandles{position:absolute;bottom:0;left:0;right:0;display:flex;justify-content:space-around}
 .icandle{width:1.4vw;height:8vw;background:linear-gradient(#efe2c4,#b9a77f);border-radius:.3vw;position:relative}
 .icandle:before{content:"";position:absolute;left:50%;top:-2.4vw;width:1.2vw;height:2.2vw;margin-left:-.6vw;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;background:radial-gradient(#fff6c8,#ffb43a 60%,transparent 70%);animation:flick .15s infinite alternate;box-shadow:0 0 3vw 1vw rgba(255,170,60,.35)}
 @keyframes flick{to{transform:scale(.92,1.06) translateX(.08vw);opacity:.9}}
-.iphone{width:17vw;height:32vw;border-radius:2.4vw;border:.5vw solid #2b2532;background:#000;box-shadow:0 2vw 5vw rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;text-align:center;padding:1.5vw;position:relative;animation:rise .6s ease-out}
+.iphone{height:min(32vw,50vh);width:calc(min(32vw,50vh)*.53);border-radius:2.4vw;border:.5vw solid #2b2532;background:#000;box-shadow:0 2vw 5vw rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;text-align:center;padding:1.5vw;position:relative;animation:rise .6s ease-out}
 .iscr{width:100%}
 .iscr .w{font-family:Cinzel,serif;font-weight:900;font-size:2.6vw;line-height:1.1;animation:rise .5s ease-out}
 .iscr .n{font-family:Cinzel,serif;font-size:9vw;color:#fff;animation:pulse 1s ease-out}
@@ -170,7 +170,7 @@ input.codein{font:700 30px Cinzel,serif;text-align:center;letter-spacing:.3em;te
 .ipot.hit{color:var(--red2);animation:shake .5s}
 @keyframes shake{20%,60%{transform:translateX(-1vw)}40%,80%{transform:translateX(1vw)}}
 .ibadge{font-family:Cinzel,serif;font-size:3vw;font-weight:900;animation:rise .5s ease-out}
-.ishield{font-size:16vw;line-height:1;animation:shieldp 2.4s ease-in-out infinite;filter:drop-shadow(0 0 3vw rgba(236,211,148,.5))}
+.ishield{font-size:min(16vw,34vh);line-height:1;animation:shieldp 2.4s ease-in-out infinite;filter:drop-shadow(0 0 3vw rgba(236,211,148,.5))}
 @keyframes shieldp{50%{transform:scale(1.08);filter:drop-shadow(0 0 5vw rgba(236,211,148,.8))}}
 .ivotes{width:44vw}
 .ivrow{display:flex;align-items:center;gap:1vw;font-size:1.9vw;margin:.7vw 0}
