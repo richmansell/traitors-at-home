@@ -176,8 +176,9 @@ function unlockAudio(){try{actx=actx||new (window.AudioContext||window.webkitAud
 function beep(){try{if(!actx)return;[0,0.4,0.8,1.2].forEach(function(t){var o=actx.createOscillator(),g=actx.createGain(),n=actx.currentTime+t;
   o.type='square';o.frequency.value=t>1?660:880;g.gain.setValueAtTime(0.0001,n);g.gain.exponentialRampToValueAtTime(0.25,n+0.02);g.gain.exponentialRampToValueAtTime(0.0001,n+0.32);
   o.connect(g);g.connect(actx.destination);o.start(n);o.stop(n+0.34)})}catch(e){}}
-var muted=LS.get('traitors-mute',false);
-function tone(o){try{if(!actx||muted)return;var n=actx.currentTime+(o.at||0),osc=actx.createOscillator(),g=actx.createGain();
+var MUTE_KEY=IS_HOST?'traitors-host-mute':'traitors-mute';
+var muted=LS.get(MUTE_KEY,IS_HOST);
+function tone(o){try{if(!actx||muted||actx.state!=='running')return;var n=actx.currentTime+(o.at||0),osc=actx.createOscillator(),g=actx.createGain();
   osc.type=o.type||'sine';osc.frequency.setValueAtTime(o.f,n);if(o.f2)osc.frequency.exponentialRampToValueAtTime(o.f2,n+o.dur);
   g.gain.setValueAtTime(0.0001,n);g.gain.exponentialRampToValueAtTime(o.vol||0.5,n+(o.atk||0.012));g.gain.exponentialRampToValueAtTime(0.0001,n+o.dur);
   osc.connect(g);g.connect(actx.destination);osc.start(n);osc.stop(n+o.dur+0.05)}catch(e){}}
@@ -185,8 +186,9 @@ function heart(at,v){v=v||1;tone({f:62,f2:38,dur:.2,vol:.9*v,at:at});tone({f:54,
 function boom(at){tone({f:95,f2:28,dur:2.2,vol:.95,atk:.005,at:at});tone({f:196,type:'triangle',dur:3,vol:.28,atk:.005,at:at});
   tone({f:293.7,type:'triangle',dur:2.6,vol:.16,atk:.005,at:at});tone({f:392,dur:2,vol:.09,at:at+.02})}
 /* matches the on-screen sequence: "Do not react" 0-2.2s, then 3,2,1, reveal at 5.2s */
-function revealSound(){[0,1,2].forEach(function(i){heart(i*0.95,0.6+i*0.1)});[2.3,2.8,3.3,3.75,4.15,4.5,4.8].forEach(function(t,i){heart(t,0.85+i*0.03)});boom(5.2)}
-function setMuted(m){muted=!!m;LS.set('traitors-mute',muted)}
+var lastReveal=0;
+function revealSound(){var now=Date.now();if(now-lastReveal<4000)return;lastReveal=now;heart(0,.55);heart(1.1,.65);heart(2.2,.85);heart(3.2,.9);heart(4.2,1);boom(5.2)}
+function setMuted(m){muted=!!m;LS.set(MUTE_KEY,muted)}
 window.addEventListener('pointerdown',function(){unlockAudio()});
 
 var wakeLock=null;
@@ -595,7 +597,7 @@ function hostMain(){
       '<button class="btn sm '+(run?'':'gold')+'" data-act="tgo">'+(run?'Pause':(l<=0?'Restart':'Start'))+'</button>'+
       '<button class="btn sm ghost" data-act="tadd" data-id="30">+30s</button><button class="btn sm ghost" data-act="treset">Reset</button></div></div>'+
       '<div class="row tpre">'+[1,2,3,5,10].map(function(m){return '<button class="btn xs ghost" data-act="tset" data-id="'+m*60+'">'+m+' min</button>'}).join('')+
-      '<button class="btn xs '+(t.phones?'gold':'ghost')+'" data-act="tphones">Phones: '+(t.phones?'on':'off')+'</button>'+'<button class="btn xs '+(muted?'ghost':'gold')+'" data-act="sound">'+(muted?'🔇 Sound off':'🔊 Sound on')+'</button></div></div>';
+      '<button class="btn xs '+(t.phones?'gold':'ghost')+'" data-act="tphones">Phones: '+(t.phones?'on':'off')+'</button>'+'<button class="btn xs '+(muted?'ghost':'gold')+'" data-act="sound">'+(muted?'🔇 Reveal sound off':'🔊 Reveal sound on')+'</button></div></div>';
   }
   setInterval(function(){
     var t=S.timer;if(!t)return;var l=tLeft();
