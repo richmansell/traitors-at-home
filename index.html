@@ -119,6 +119,28 @@ input.codein{font:700 30px Cinzel,serif;text-align:center;letter-spacing:.3em;te
 .goalrow{display:grid;grid-template-columns:1fr 80px 40px;gap:6px;align-items:center}
 .field{margin:10px 0}
 .field>.label{margin-bottom:2px}
+.tvmode .wrap,.tvwrap{max-width:none}
+.tvwrap{padding:2.2vw 3vw;min-height:100vh}
+.tvhead{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--line);padding-bottom:1vw;margin-bottom:2vw}
+.tvbrand{font-family:Cinzel,serif;font-size:3.2vw;color:var(--gold2);font-weight:900;letter-spacing:.04em}
+.tvphase{font-family:Cinzel,serif;font-size:2.2vw;color:var(--muted)}
+.tvgrid{display:grid;grid-template-columns:1.45fr 1fr;gap:2vw;align-items:start}
+.tvcard{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:1.2vw;padding:2vw;margin-bottom:2vw}
+.tvlabel{font-size:1.1vw;text-transform:uppercase;letter-spacing:.15em;color:var(--muted);font-weight:600;margin-bottom:.8vw}
+.tvbig{font-family:Cinzel,serif;font-weight:900;font-size:4.2vw;color:var(--gold2);line-height:1.1;margin:.2em 0 .3em}
+.tvtext{font-size:1.8vw;line-height:1.4}
+.tvpot{font-family:Cinzel,serif;font-weight:900;font-size:7vw;color:var(--gold2);text-align:center;line-height:1}
+.tvtimer{font-family:Cinzel,serif;font-weight:900;font-size:6.5vw;text-align:center;font-variant-numeric:tabular-nums;line-height:1;color:#fff}
+.tvtimer.low,.tvtimer.done{color:var(--red2)}
+.tvmode .chips{gap:.6vw}.tvmode .chip{font-size:1.6vw;padding:.5vw 1.2vw}
+.tvmode .goal{font-size:1.9vw;padding:1vw 0}.tvmode .goal .tick{width:2.4vw;height:2.4vw;font-size:1.5vw}
+.tvmode .potbar{height:1vw;margin-top:1.2vw}
+.tvqr{background:#fff;border-radius:1vw;padding:1vw;width:26vw;margin:0 auto}.tvqr svg{width:100%;height:auto;display:block}
+.tvmode .bigword{font-size:10vw}.tvmode .dnr{font-size:6.5vw}.tvmode .sub{font-size:2.6vw}.tvmode .ev-title{font-size:3.2vw}.tvmode .count{font-size:24vw}
+.tvmode .night h2{font-size:5vw}.tvmode .night p{font-size:2.2vw}.tvmode .night .moon{width:9vw;height:9vw;box-shadow:-1.8vw 1vw 0 0 #3d3a46}
+.tvmode .tally{font-size:2vw;padding:.8vw 0}
+.tvmode .result{max-width:none}
+.tvlist{font-size:1.6vw;padding:.4vw 0}
 .mdock{position:fixed;right:12px;bottom:12px;z-index:60;width:min(380px,calc(100vw - 24px));background:var(--panel2);border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.55)}
 .mbar{display:flex;gap:6px;align-items:center;padding:8px}
 .mbar .mnow{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:12px;color:var(--muted)}
@@ -175,6 +197,7 @@ var LS = {
 var qs = new URLSearchParams(location.search);
 var ROOM = (qs.get('room')||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
 var IS_HOST = qs.has('host');
+var IS_TV = !IS_HOST && qs.has('tv');
 var app = document.getElementById('app');
 var ov = document.getElementById('overlay');
 
@@ -306,6 +329,7 @@ function hostMain(){
   if(S.stash==null) S.stash=0;
   if(!S.done) S.done={};
   LS.set('traitors-last-host',ROOM);
+  var tvs=[];
   var conns={}, allConns=[], peer=null, peerStatus='Starting…', peerLive=false;
   var ui={tab:null,hideRoles:false,steal:5,pick:null,mfilter:'all',draft:{title:'',desc:'',goals:[['',2]],secret:'',mins:3,shield:''},banishPick:'',murder:'',recruit:'',winner:'auto'};
 
@@ -350,6 +374,7 @@ function hostMain(){
     c.on('open',function(){try{c.send({t:'welcome',started:S.started})}catch(e){}});
     c.on('data',function(m){
       if(!m||typeof m!=='object')return;
+      if(m.t==='hello'&&m.tv){if(tvs.indexOf(c)<0)tvs.push(c);try{c.send({t:'tv',v:tvView()})}catch(e){}render();return}
       if(m.t==='hello'){
         var id=String(m.id||'').slice(0,40), name=String(m.name||'').trim().slice(0,20);
         if(!id||!name)return;
@@ -366,11 +391,12 @@ function hostMain(){
         vote(pid,m.target);
       }
     });
-    c.on('close',function(){c._dead=true;if(pid&&conns[pid]===c){delete conns[pid];render()}});
+    c.on('close',function(){c._dead=true;var ti=tvs.indexOf(c);if(ti>=0){tvs.splice(ti,1);render()}if(pid&&conns[pid]===c){delete conns[pid];render()}});
     c.on('error',function(){});
   }
   function broadcast(){
     Object.keys(conns).forEach(function(id){var c=conns[id];if(c&&c.open){try{c.send({t:'view',v:viewFor(id)})}catch(e){}}});
+    if(tvs.length){var tv=tvView();tvs.forEach(function(c){if(c.open){try{c.send({t:'tv',v:tv})}catch(e){}}})}
   }
   function commit(){LS.set(KEY,S);broadcast();render()}
 
@@ -430,6 +456,32 @@ function hostMain(){
     }
     return v;
   }
+
+  /* ---- TV view: public information only ---- */
+  function publicEvent(){
+    var e=S.event;if(!e)return null;var o={seq:e.seq,kind:e.kind,title:'',big:'',sub:'',tone:'neutral'};
+    if(e.kind==='roles'){o.title='The game has begun';o.big='Trust no one';o.sub='The Traitors are among you.'}
+    else if(e.kind==='morning'){var mn=e.murdered?nameOf(e.murdered):null;o.title='Last night…';o.big=mn||'No one';o.sub='was murdered.';o.tone=mn?'dead':'neutral'}
+    else if(e.kind==='banish'){o.title=nameOf(e.target)+' was…';o.big=cap(e.role);o.tone=e.role==='traitor'?'traitor':'faithful';o.sub=e.role==='traitor'?'A Traitor has been caught!':'An innocent Faithful has fallen.'}
+    else if(e.kind==='sabotage'){o.title='Sabotage!';o.big='−'+money(e.amount);o.tone='traitor';o.sub='The Traitors have stolen from the prize fund.'}
+    else if(e.kind==='end'){var w=e.winner;o.title='Game over';o.big=w==='traitors'?'Traitors win':'Faithful win';o.tone=w==='traitors'?'traitor':'faithful';
+      var ws=list().filter(function(p){return p.alive&&((p.role==='traitor')===(w==='traitors'))}).map(function(p){return p.name});
+      o.sub='Prize fund: '+money(S.pot)+(ws.length?'. Shared by: '+ws.join(', '):'')}
+    else return null;
+    return o;
+  }
+  function tvView(){
+    var showAll=S.phase==='end',tl=tLeft();
+    var v={code:S.code,phase:S.phase,started:S.started,round:S.round,pot:S.pot,potMax:S.potMax,cur:S.cur,joinUrl:joinUrl(),winner:S.winner,
+      players:list().map(function(p){return {name:p.name,alive:S.started?p.alive:true,fate:p.fate,role:(showAll||p.fate==='banished')?p.role:null}}),
+      timer:(S.timer.endAt||tl!==S.timer.total)?{left:tl,running:!!S.timer.endAt}:null,
+      mission:S.mission?{title:S.mission.title,desc:S.mission.desc,shield:S.mission.shield||'',goals:S.mission.goals.map(function(g){return {text:g.text,value:g.value,done:g.done}})}:null,
+      vote:null,event:publicEvent(),stash:showAll?S.stash:0};
+    if(S.vote){v.vote={open:S.vote.open,revealed:S.vote.revealed,count:Object.keys(S.vote.votes).length,voters:alive().length};
+      if(S.vote.revealed)v.vote.results=Object.keys(S.vote.votes).map(function(k){return {from:nameOf(k),to:nameOf(S.vote.votes[k])}})}
+    return v;
+  }
+  function tvUrl(){return baseUrl()+'?tv&room='+ROOM}
 
   /* ---- game actions ---- */
   function vote(pid,target){
@@ -566,7 +618,7 @@ function hostMain(){
     return '<div class="hbar"><div><span class="brand">The Traitors</span> <span class="muted small">· Claudia\'s desk</span></div>'+
       '<div class="status" style="gap:14px"><span>Room <span class="roomcode">'+ROOM+'</span></span>'+
       '<span><span class="dot '+(peerLive?'on':'warn')+'"></span> '+esc(peerLive?'Live':peerStatus)+'</span>'+
-      '<span>'+on+'/'+list().length+' phones</span></div></div>'+
+      '<span>'+on+'/'+list().length+' phones</span><a class="btn xs ghost" href="'+esc(tvUrl())+'" target="_blank" rel="noopener">📺 TV screen'+(tvs.length?' ●':'')+'</a></div></div>'+
       (!peerLive&&peerStatus.length>20?'<div class="warnbox">'+esc(peerStatus)+'</div>':'');
   }
   function drawQR(){
@@ -583,6 +635,7 @@ function hostMain(){
       '<div class="card center"><div class="label">Everyone: scan or open this link</div><div class="qrbox" id="qr"></div>'+
       '<div class="link">'+esc(joinUrl())+'</div><div class="row"><button class="btn sm" data-act="share">Share link</button><button class="btn sm ghost" data-act="copy">Copy</button></div>'+
       '<p class="muted small">Or go to the same page and type the code <b class="roomcode">'+ROOM+'</b>.</p>'+
+      '<p class="small" style="margin-top:10px">📺 <b>TV screen:</b> open this on the laptop <span class="link" style="display:block">'+esc(tvUrl())+'</span>'+(tvs.length?'<span class="ok">TV connected</span>':'<span class="muted">No TV connected yet</span>')+'</p>'+
       (/^(localhost|127\.)/.test(location.hostname)?'<div class="warnbox">You opened this on <b>localhost</b>, so phones can\'t use this link. Open the host page using your computer\'s Wi-Fi IP address (for example http://192.168.1.20:8000) instead.</div>':'')+
       '</div>'+
       '<div class="card"><h3>Prize fund settings</h3><div class="row"><div class="field"><div class="label">Unit</div><input type="text" id="set-cur" value="'+esc(S.cur)+'" data-change="cur" placeholder="£ or sweets"></div>'+
@@ -995,7 +1048,97 @@ function playerMain(){
   render();makePeer();
 }
 
-if(!ROOM) landing(); else if(IS_HOST) hostMain(); else playerMain();
+/* ============ TV SCREEN ============ */
+function tvMain(){
+  document.body.classList.add('tvmode');
+  var peer=null,conn=null,lastMsg=0,connecting=0,view=null,live=false,seen=-1,showing=false,started=false,token=0;
+  function makePeer(){
+    if(typeof Peer==='undefined'){render();return}
+    var p=new Peer(undefined,{debug:1});peer=p;
+    p.on('open',function(){if(peer===p)openConn()});
+    p.on('disconnected',function(){if(peer!==p)return;setTimeout(function(){try{if(!p.destroyed&&p.disconnected)p.reconnect()}catch(e){}},500)});
+    p.on('error',function(e){if(peer!==p)return;if(e.type==='peer-unavailable'){live=false;connecting=Date.now()-3500;if(!view)render()}});
+  }
+  function openConn(){
+    if(!peer||!peer.open)return;connecting=Date.now();var old=conn;conn=null;if(old){try{old.close()}catch(e){}}
+    var c=peer.connect(PEER_PREFIX+ROOM,{reliable:true});conn=c;
+    c.on('open',function(){if(conn!==c)return;lastMsg=Date.now();live=true;try{c.send({t:'hello',tv:true})}catch(e){}});
+    c.on('data',function(m){if(conn!==c)return;lastMsg=Date.now();live=true;if(m&&m.t==='tv'){view=m.v;view._recv=Date.now();render()}});
+    c.on('close',function(){if(conn===c){live=false;connecting=0}});c.on('error',function(){});
+  }
+  function tick(){
+    if(typeof Peer==='undefined')return;
+    if(!peer||peer.destroyed){makePeer();return}
+    if(peer.disconnected){try{peer.reconnect()}catch(e){}return}
+    if(!peer.open)return;
+    var stale=Date.now()-lastMsg>11000;if(stale)live=false;
+    if((!conn||!conn.open||stale)&&Date.now()-connecting>6000)openConn();
+  }
+  setInterval(tick,2000);
+  function money(n){return fmtMoney(view?view.cur:'£',n)}
+  function tLeftTv(){var t=view&&view.timer;if(!t)return 0;return t.running?Math.max(0,t.left-(Date.now()-view._recv)):t.left}
+  function timerHtml(){if(!view||!view.timer)return '';var l=tLeftTv();
+    return '<div class="tvcard"><div class="tvlabel" style="text-align:center">'+(l<=0?'Time\'s up':'Time left')+'</div><div class="tvtimer'+(l<=0?' done':l<=10000&&view.timer.running?' low':'')+'" id="tvtimer">'+mmss(l)+'</div></div>'}
+  setInterval(function(){var el=document.getElementById('tvtimer');if(el&&view&&view.timer&&view.timer.running){var l=tLeftTv();el.textContent=mmss(l);el.className='tvtimer'+(l<=0?' done':l<=10000?' low':'')}},250);
+
+  function start(){unlockAudio();keepAwake();try{var d=document.documentElement;(d.requestFullscreen||d.webkitRequestFullscreen).call(d)}catch(e){}started=true;ov.hidden=true;ov.innerHTML='';render()}
+  ov.hidden=false;ov.innerHTML='<div class="result"><div class="bigword" style="color:var(--gold2);font-size:7vw">The Traitors</div><p class="sub">Room '+esc(ROOM)+' · TV screen</p><button class="btn gold big" id="tvgo" style="max-width:520px;margin-top:3vw">Click to start (sound and full screen)</button><p class="muted small">Plug the laptop into your speaker for the heartbeat.</p></div>';
+  ov.onclick=function(){if(!started){ov.onclick=null;start()}};
+
+  function playEvent(ev){
+    showing=true;var my=++token;ov.hidden=false;
+    var at=function(ms,fn){setTimeout(function(){if(my===token)fn()},ms)};
+    revealSound();
+    ov.innerHTML='<div class="dnr">Do not react.</div>';
+    [3,2,1].forEach(function(n,i){at(2200+i*1000,function(){ov.innerHTML='<p class="sub">You will be told in</p><div class="count">'+n+'</div>'})});
+    at(5200,function(){ov.innerHTML='<div class="result tone-'+ev.tone+'"><div class="ev-title serif">'+esc(ev.title)+'</div><div class="bigword">'+esc(ev.big)+'</div>'+(ev.sub?'<p class="sub">'+esc(ev.sub)+'</p>':'')+'</div>';
+      at(ev.kind==='end'?30000:12000,finish)});
+    function finish(){if(my!==token)return;token++;seen=ev.seq;showing=false;ov.hidden=true;ov.innerHTML='';render()}
+  }
+  var PH={lobby:'Gathering',free:'Free time',mission:'Mission',roundtable:'The Round Table',night:'Night',end:'Game over'};
+  function roster(v){var a=v.players.filter(function(p){return p.alive}),d=v.players.filter(function(p){return !p.alive});
+    return '<div class="tvcard"><div class="tvlabel">Still in the castle ('+a.length+')</div><div class="chips">'+a.map(function(p){return '<span class="chip">'+esc(p.name)+'</span>'}).join('')+'</div>'+
+      (d.length?'<div class="tvlabel" style="margin-top:1.4vw">Gone</div>'+d.map(function(p){return '<div class="tvlist"><b>'+esc(p.name)+'</b> <span class="muted">'+(p.fate==='banished'?'banished, '+(p.role==='traitor'?'<span style="color:var(--red2)">Traitor</span>':'Faithful'):'murdered')+'</span></div>'}).join(''):'')+'</div>'}
+  function potHtml(v){return '<div class="tvcard"><div class="tvlabel" style="text-align:center">Prize fund</div><div class="tvpot">'+esc(money(v.pot))+'</div>'+(v.potMax>0?'<div class="potbar"><i style="width:'+Math.min(100,v.pot/v.potMax*100)+'%"></i></div>':'')+'</div>'}
+  function render(){
+    if(!view){app.innerHTML='<div class="tvwrap center"><h1 class="serif title">The Traitors</h1><p class="tvtext muted">'+(typeof Peer==='undefined'?'Could not load. Check the internet connection.':'Waiting for Claudia to open room '+esc(ROOM)+'…')+'</p></div>';return}
+    var v=view,h='';if(seen<0)seen=v.event?v.event.seq:0;
+    var head='<div class="tvhead"><span class="tvbrand">The Traitors</span><span class="tvphase">'+(v.started&&v.phase!=='end'?'Round '+v.round+' · ':'')+(PH[v.phase]||'')+'</span></div>';
+    if(v.phase==='lobby'){
+      var qr='';try{if(typeof qrcode!=='undefined'){var q=qrcode(0,'M');q.addData(v.joinUrl);q.make();qr=q.createSvgTag(6,2)}}catch(e){}
+      h=head+'<div class="tvgrid"><div class="tvcard center"><div class="tvlabel">Scan to enter the castle</div><div class="tvqr">'+qr+'</div>'+
+        '<p class="tvtext" style="margin-top:1.5vw">or go to <b>'+esc(v.joinUrl.replace(/^https?:\/\//,'').replace(/\?.*$/,''))+'</b><br>and enter code <span class="roomcode" style="font-size:3vw">'+esc(v.code)+'</span></p></div>'+
+        '<div class="tvcard"><div class="tvlabel">In the castle ('+v.players.length+')</div><div class="chips">'+v.players.map(function(p){return '<span class="chip">'+esc(p.name)+'</span>'}).join('')+'</div>'+
+        '<p class="tvtext muted" style="margin-top:2vw">Claudia is choosing her Traitors…</p></div></div>';
+    } else if(v.phase==='night'){
+      h='<div class="night"><div class="moon"></div><h2 style="color:#cfc8d8">Night has fallen</h2><p class="muted">Everyone, close your eyes.</p>'+(v.timer?'<div style="width:30vw;margin-top:3vw">'+timerHtml()+'</div>':'')+'</div>';
+    } else if(v.phase==='end'){
+      var w=v.winner;
+      h=head+'<div class="center"><div class="bigword" style="color:'+(w==='traitors'?'var(--red2)':'var(--gold2)')+'">'+(w==='traitors'?'Traitors win':'Faithful win')+'</div></div><div class="tvgrid"><div class="tvcard"><div class="tvlabel">True colours</div>'+
+        v.players.map(function(p){return '<div class="tally"><span>'+esc(p.name)+(p.alive?'':' <span class="muted">('+p.fate+')</span>')+'</span><span class="badge '+p.role+'" style="font-size:1.2vw">'+p.role+'</span></div>'}).join('')+'</div><div>'+potHtml(v)+
+        (v.stash?'<div class="tvcard center"><div class="tvlabel">Traitors\' stash</div><div class="tvpot" style="color:var(--red2);font-size:5vw">'+esc(money(v.stash))+'</div></div>':'')+'</div></div>';
+    } else {
+      var main='';
+      if(v.phase==='mission'&&v.mission){var m=v.mission;
+        main='<div class="tvcard"><div class="tvlabel">Mission</div><div class="tvbig">'+esc(m.title)+'</div><p class="tvtext">'+esc(m.desc)+'</p>'+
+          '<div style="margin-top:1.5vw">'+m.goals.map(function(g){return '<div class="goal '+(g.done?'done':'')+'"><span class="tick">'+(g.done?'✓':'')+'</span><span>'+esc(g.text)+'</span><span class="val">+'+esc(money(g.value))+'</span></div>'}).join('')+'</div>'+
+          (m.shield?'<p class="tvtext" style="color:var(--gold2);margin-top:1.5vw">🛡 Shield: '+esc(m.shield)+'</p>':'')+'</div>';
+      } else if(v.phase==='roundtable'){var vt=v.vote;
+        main='<div class="tvcard"><div class="tvbig">The Round Table</div>'+
+          (!vt?'<p class="tvtext">Discuss. Accuse. Defend.</p>':vt.revealed?'<div class="tvlabel" style="margin-top:1vw">The votes</div>'+(vt.results||[]).map(function(r){return '<div class="tally"><span>'+esc(r.from)+'</span><b>→ '+esc(r.to)+'</b></div>'}).join(''):
+          '<p class="tvtext">'+(vt.open?'Voting is open…':'Votes are locked.')+'</p><div class="tvpot" style="font-size:6vw;margin-top:1vw">'+vt.count+' / '+vt.voters+'</div><p class="tvtext muted center">have voted</p>')+'</div>';
+      } else {
+        main='<div class="tvcard"><div class="tvbig">Mingle. Scheme.<br>Trust no one.</div><p class="tvtext muted">The Traitors walk among you.</p></div>';
+      }
+      h=head+'<div class="tvgrid"><div>'+main+'</div><div>'+timerHtml()+potHtml(v)+roster(v)+'</div></div>';
+    }
+    app.innerHTML='<div class="tvwrap">'+h+'</div>';
+    if(started&&v.event&&v.event.seq>seen&&!showing)playEvent(v.event);
+  }
+  render();makePeer();
+}
+
+if(!ROOM) landing(); else if(IS_HOST) hostMain(); else if(IS_TV) tvMain(); else playerMain();
 })();
 </script>
 </body>
