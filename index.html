@@ -119,6 +119,28 @@ input.codein{font:700 30px Cinzel,serif;text-align:center;letter-spacing:.3em;te
 .goalrow{display:grid;grid-template-columns:1fr 80px 40px;gap:6px;align-items:center}
 .field{margin:10px 0}
 .field>.label{margin-bottom:2px}
+.mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;max-height:460px;overflow-y:auto;padding:2px;margin-bottom:10px}
+.mcard{appearance:none;text-align:left;border:1px solid var(--line);border-radius:12px;padding:10px;background:#1b1620;color:var(--text);cursor:pointer;font:inherit;display:flex;flex-direction:column;gap:4px}
+.mcard:hover{border-color:#5a4c66}
+.mcard.sel{border-color:var(--gold);background:#2e2517;box-shadow:0 0 0 1px var(--gold)}
+.mcard.done{opacity:.5}
+.mcard.done.sel{opacity:1}
+.mcard .mt{font-weight:700;color:var(--gold2);font-size:15px}
+.mcard .ms{font-size:13px;color:#d9cfc0}
+.mtags{display:flex;gap:4px;flex-wrap:wrap}
+.mtag{font-size:11px;padding:2px 6px;border-radius:6px;background:#2c2733;color:var(--muted)}
+.mtag.okt{background:var(--green);color:#0b1a10;font-weight:700}
+.msh{font-size:12px;color:var(--gold)}
+.tcard{padding:12px 14px}
+.trow{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.tdisp{font-family:Cinzel,serif;font-weight:900;font-size:46px;color:var(--gold2);font-variant-numeric:tabular-nums;min-width:150px;line-height:1}
+.tdisp.low{color:var(--red2)}
+.tdisp.done{color:var(--red2);animation:flash .5s ease-in-out 8}
+@keyframes flash{50%{opacity:.15}}
+.tbtns{display:flex;gap:4px;flex-wrap:wrap;flex:1;justify-content:flex-end}
+.tpre{flex-wrap:wrap;gap:6px;margin-top:8px}.tpre>*{flex:none}
+.ptimer{position:sticky;top:0;z-index:4;background:#1d1722;border:1px solid var(--line);border-radius:12px;padding:8px 12px;margin:8px 0;display:flex;justify-content:space-between;align-items:center}
+.ptimer b{font-family:Cinzel,serif;font-size:24px;color:var(--gold2);font-variant-numeric:tabular-nums}
 .warnbox{background:#2d2312;border:1px solid #6b5426;color:#f0d9a5;border-radius:12px;padding:10px 12px;margin:10px 0;font-size:14px}
 </style>
 </head>
@@ -148,26 +170,69 @@ function fmtMoney(cur,n){cur=cur||'';n=Math.round(n*100)/100;return cur.length<=
 function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
 function cap(s){s=String(s||'');return s.charAt(0).toUpperCase()+s.slice(1)}
 function baseUrl(){return location.origin+location.pathname}
+function mmss(ms){var s=Math.ceil(Math.max(0,ms)/1000),m=Math.floor(s/60);s=s%60;return (m<10?'0':'')+m+':'+(s<10?'0':'')+s}
+var actx=null;
+function unlockAudio(){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();if(actx.resume)actx.resume()}catch(e){}}
+function beep(){try{if(!actx)return;[0,0.4,0.8,1.2].forEach(function(t){var o=actx.createOscillator(),g=actx.createGain(),n=actx.currentTime+t;
+  o.type='square';o.frequency.value=t>1?660:880;g.gain.setValueAtTime(0.0001,n);g.gain.exponentialRampToValueAtTime(0.25,n+0.02);g.gain.exponentialRampToValueAtTime(0.0001,n+0.32);
+  o.connect(g);g.connect(actx.destination);o.start(n);o.stop(n+0.34)})}catch(e){}}
+var muted=LS.get('traitors-mute',false);
+function tone(o){try{if(!actx||muted)return;var n=actx.currentTime+(o.at||0),osc=actx.createOscillator(),g=actx.createGain();
+  osc.type=o.type||'sine';osc.frequency.setValueAtTime(o.f,n);if(o.f2)osc.frequency.exponentialRampToValueAtTime(o.f2,n+o.dur);
+  g.gain.setValueAtTime(0.0001,n);g.gain.exponentialRampToValueAtTime(o.vol||0.5,n+(o.atk||0.012));g.gain.exponentialRampToValueAtTime(0.0001,n+o.dur);
+  osc.connect(g);g.connect(actx.destination);osc.start(n);osc.stop(n+o.dur+0.05)}catch(e){}}
+function heart(at,v){v=v||1;tone({f:62,f2:38,dur:.2,vol:.9*v,at:at});tone({f:54,f2:34,dur:.24,vol:.7*v,at:at+.26})}
+function boom(at){tone({f:95,f2:28,dur:2.2,vol:.95,atk:.005,at:at});tone({f:196,type:'triangle',dur:3,vol:.28,atk:.005,at:at});
+  tone({f:293.7,type:'triangle',dur:2.6,vol:.16,atk:.005,at:at});tone({f:392,dur:2,vol:.09,at:at+.02})}
+/* matches the on-screen sequence: "Do not react" 0-2.2s, then 3,2,1, reveal at 5.2s */
+function revealSound(){[0,1,2].forEach(function(i){heart(i*0.95,0.6+i*0.1)});[2.3,2.8,3.3,3.75,4.15,4.5,4.8].forEach(function(t,i){heart(t,0.85+i*0.03)});boom(5.2)}
+function setMuted(m){muted=!!m;LS.set('traitors-mute',muted)}
+window.addEventListener('pointerdown',function(){unlockAudio()});
 
 var wakeLock=null;
 function keepAwake(){try{if('wakeLock' in navigator&&document.visibilityState==='visible'){navigator.wakeLock.request('screen').then(function(l){wakeLock=l}).catch(function(){})}}catch(e){}}
 document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible'&&wakeLock!==false)keepAwake()});
 
 /* ============ CONTENT ============ */
+/* [title, summary, full rules, minutes, props, goals[[text,£]], shield rule] */
 var MISSIONS=[
- {title:'Tower of Trust',desc:'Using anything in the room (cups, books, cushions, packs of cards) build a free-standing tower in 4 minutes. It must stand on its own for 10 seconds.',goals:[['Tower stands on its own for 10 seconds',4],['Taller than 1 metre',4],['Taller than the tallest player',2]]},
- {title:'The Silent Line-Up',desc:'Without speaking, line up in order of birthday (Jan → Dec, ignore the year). You have 2 minutes. Gestures only. Claudia checks the line.',goals:[['Done within 2 minutes',4],['No more than 2 people out of place',3],['Perfect order',3]]},
- {title:'Keepy-Uppy',desc:'Keep a balloon (or scrunched-up paper ball) in the air. Nobody may touch it twice in a row and everyone must touch it at least once.',goals:[['30 seconds in the air',3],['60 seconds in the air',3],['Every player touched it',4]]},
- {title:'Memory Vault',desc:'Claudia reveals a tray of 20 objects for 30 seconds, then covers it. As a group, write down as many as you can in 2 minutes.',goals:[['10 or more remembered',3],['15 or more remembered',3],['All 20 remembered',4]]},
- {title:'The Castle Quiz',desc:'Claudia asks 5 questions. The group gets one shared answer per question, agreed within 20 seconds.',goals:[['Question 1',2],['Question 2',2],['Question 3',2],['Question 4',2],['Question 5',2]]},
- {title:'The Treasure Hunt',desc:'Claudia has hidden 5 tokens (sweets, coins, playing cards) around the house. You have 5 minutes to find them and bring them to the Round Table.',goals:[['Token 1 found',2],['Token 2 found',2],['Token 3 found',2],['Token 4 found',2],['Token 5 found',2]]},
- {title:'Mind Meld',desc:'Go round in pairs. On "3, 2, 1" both say a word at the same time, then keep trying to say the SAME word by linking your last two. Each pair gets 6 attempts.',goals:[['First pair melds',2],['Second pair melds',2],['Third pair melds',2],['Fourth pair melds',2],['Every pair melds',2]]},
- {title:'Catch & Count',desc:'Stand in a circle and throw a ball (or rolled-up socks) across the circle. Count each catch out loud. A drop resets to zero. 3 minutes.',goals:[['Reach 15',3],['Reach 30',3],['Reach 50',4]]},
- {title:'Human Knot',desc:'Everyone grabs two random hands across the circle. Untangle into a single circle without letting go. 4 minutes.',goals:[['Untangled in time',6],['Done in under 2 minutes',4]]},
- {title:'Blind Builder',desc:'One player is blindfolded. The rest can only answer "yes" or "no" as they guide them to draw a castle on paper in 3 minutes. Claudia judges.',goals:[['Recognisable castle',4],['Has a door and windows',3],['Claudia is impressed',3]]},
- {title:'Anagram Dungeon',desc:'Claudia reads out 3 anagrams (for example "RAT TOIRS" = TRAITORS). 60 seconds each.',goals:[['Anagram 1 solved',3],['Anagram 2 solved',3],['Anagram 3 solved',4]]},
- {title:'Shield Auction',desc:'The group earns money normally... but one Shield is up for grabs. Whoever wins rock-paper-scissors last-one-standing is protected from murder tonight (Claudia tracks it).',goals:[['Group completes the tournament in 3 minutes',5],['Nobody cheats (Claudia decides)',5]]}
-];
+ ['Tower of Trust','Build a free-standing tower from household stuff','Using anything in the room (cups, books, cushions, packs of cards) build a free-standing tower in the time limit. It must stand on its own for 10 seconds.',4,'Cups, books, cushions',[['Stands alone for 10 seconds',4],['Taller than 1 metre',4],['Taller than the tallest player',2]],'Whoever places the final piece on top'],
+ ['The Silent Line-Up','Line up by birthday without speaking','Without speaking, line up in birthday order (Jan → Dec, ignore the year). Gestures only. Claudia checks the line.',2,'',[['Done in time',4],['No more than 2 out of place',3],['Perfect order',3]],'First person to stand in their correct spot'],
+ ['Keepy-Uppy','Keep a balloon in the air, everyone touches it','Keep a balloon in the air. Nobody may touch it twice in a row and everyone must touch it at least once.',2,'Balloon',[['30 seconds in the air',3],['60 seconds in the air',3],['Every player touched it',4]],'Most touches without fumbling (Claudia counts)'],
+ ['Memory Vault','Memorise 20 objects in 30 seconds','Claudia reveals a tray of 20 objects for 30 seconds, then covers it. As a group, write down as many as you can.',3,'Tray, 20 objects, tea towel',[['10+ remembered',3],['15+ remembered',3],['All 20',4]],'Whoever remembered the most on their own (everyone writes first)'],
+ ['The Castle Quiz','5 questions, one group answer each','Claudia asks 5 questions. The group agrees one answer per question within 20 seconds.',3,'Quiz questions',[['Question 1',2],['Question 2',2],['Question 3',2],['Question 4',2],['Question 5',2]],'First to shout the right answer to question 5'],
+ ['The Treasure Hunt','Find 5 hidden tokens around the house','Claudia has hidden 5 tokens around the house. Find them all and bring them to the Round Table.',5,'5 hidden tokens',[['Token 1',2],['Token 2',2],['Token 3',2],['Token 4',2],['Token 5',2]],'Whoever finds the most tokens'],
+ ['Mind Meld','Pairs try to say the same word at once','In pairs, both say a word on "3, 2, 1". Then keep trying to say the SAME word by linking your last two words. 6 attempts per pair.',5,'',[['First pair melds',2],['Second pair melds',2],['Third pair melds',2],['Fourth pair melds',2],['Every pair melds',2]],'The first pair to meld choose one of themselves'],
+ ['Catch & Count','Throw-and-catch streak with no drops','Stand in a circle, throw a ball across it and count catches out loud. A drop resets to zero.',3,'Ball or rolled-up socks',[['Reach 15',3],['Reach 30',3],['Reach 50',4]],'The person who makes the record-breaking catch'],
+ ['Human Knot','Untangle a knot of hands into a circle','Everyone grabs two random hands across the circle. Untangle into a single circle without letting go.',4,'',[['Untangled in time',6],['Done in under 2 minutes',4]],'Claudia awards it to the calmest leader'],
+ ['Blind Builder','Guide a blindfolded artist with yes/no only','One player is blindfolded. The rest may only say "yes" or "no" as they guide them to draw a castle. Claudia judges.',3,'Paper, pen, blindfold',[['Recognisable castle',4],['Door and windows',3],['Claudia is impressed',3]],'The blindfolded artist, if it\'s recognisable'],
+ ['Anagram Dungeon','Solve 3 anagrams, 60 seconds each','Claudia reads 3 anagrams (e.g. "RAT TOIRS" = TRAITORS). 60 seconds each.',3,'Prepared anagrams',[['Anagram 1',3],['Anagram 2',3],['Anagram 3',4]],'Whoever solves the most'],
+ ['Shield Tournament','Rock-paper-scissors knockout for a Shield','Rock-paper-scissors knockout until one player is left standing. Play fair, play fast.',3,'',[['Tournament done in time',5],['Nobody cheats (Claudia decides)',5]],'The last player standing'],
+ ['Cup Stack Relay','Relay to build and collapse a cup pyramid','In relay, each player builds a 10-cup pyramid then collapses it back into a stack before the next goes.',3,'10 plastic cups',[['Half the group finishes',3],['Everyone finishes',4],['Under 2 minutes',3]],'Fastest individual stacker'],
+ ['Bottle Flip','Land a bottle upright as many times as possible','Take turns flipping a part-filled water bottle to land upright. Count the group total.',3,'Plastic bottle, part filled',[['3 landings',3],['6 landings',3],['10 landings',4]],'First to land two in a row'],
+ ['Paper Plane Gauntlet','Fly planes into a target across the room','Everyone folds a paper plane and gets 2 throws at a bin or box across the room.',4,'Paper, a bin or box',[['3 hits',3],['6 hits',3],['Everyone hits once',4]],'Longest flight'],
+ ['Name That Tune','Name 5 songs from the intro','Claudia plays (or hums) 5 song intros. The group names song and artist.',4,'Phone with music',[['Song 1',2],['Song 2',2],['Song 3',2],['Song 4',2],['Song 5',2]],'Most songs named first'],
+ ['Castle Charades','Act out films, the group guesses','Each pod acts out a film Claudia whispers to them. The rest guess within 60 seconds each.',5,'Film list',[['First film guessed',3],['Second film guessed',3],['All films guessed',4]],'Best actor (group vote, not yourself)'],
+ ['Pictionary Pods','Draw clues for your team to guess','Pods take turns drawing words Claudia gives them. 45 seconds each, no letters or numbers.',5,'Paper, pens, word list',[['3 words guessed',3],['6 words guessed',3],['Every pod scores',4]],'The artist behind the fastest guess'],
+ ['Coin in the Cup','Toss coins into a mug from a line','Stand behind a line and toss coins into a mug. Group total counts.',3,'Coins, a mug',[['5 in',3],['10 in',3],['15 in',4]],'Most coins landed'],
+ ['Spoon Relay','Carry a potato on a spoon around a course','Relay around the room carrying an orange or potato on a spoon. Drop it and go back to the start.',3,'Spoons, oranges or potatoes',[['Half the group done',3],['Everyone done',4],['No drops at all',3]],'Fastest leg'],
+ ['Alphabet Chain','A to Z in a category, 3 seconds each','Go round the circle naming things in a category (e.g. food) from A to Z, 3 seconds each. A miss restarts from A.',3,'',[['Reach M',4],['Reach Z',6]],'Whoever says the Z word'],
+ ['Forbidden Words','Chat for 3 minutes without saying yes or no','Have a group chat about your week. "Yes" and "No" are banned. Claudia counts the slips.',3,'',[['Under 10 slips',3],['Under 5 slips',3],['Under 2 slips',4]],'Anyone who never slipped (Claudia picks if several)'],
+ ['Fact or Fiction','Vote true or false on 6 strange facts','Claudia reads 6 strange statements. The group agrees true or false for each.',4,'Prepared facts',[['3 correct',3],['5 correct',3],['All 6',4]],'Whoever argued the right side on the trickiest one'],
+ ['House of Cards','Build a two-storey house of cards','Build a house of cards at least two storeys high that stands for 5 seconds.',5,'Deck of cards',[['One storey stands',4],['Two storeys stand',3],['Three storeys stand',3]],'Whoever places the top card'],
+ ['Sweet Sort','Sort mixed sweets by colour with spoons','Sort a bowl of mixed sweets into colours using only spoons. No fingers.',2,'Bag of sweets, spoons, bowls',[['Half sorted',4],['All sorted',4],['No fingers used',2]],'Most sweets sorted by one person'],
+ ['Jar Estimate','One group guess at the sweets in a jar','Everyone writes a guess privately, then the group agrees ONE guess for the number of sweets in the jar.',2,'Jar of counted sweets',[['Within 20%',3],['Within 10%',3],['Exact',4]],'Closest individual written guess'],
+ ['Statues','Stay frozen while Claudia tries to make you laugh','Everyone freezes in a castle pose. Claudia (and the ghosts) try to make them laugh.',2,'',[['Nobody cracks for 30 seconds',5],['Nobody cracks for 60 seconds',5]],'The last person to crack'],
+ ['Newspaper Couture','Dress a model in a newspaper outfit','Dress one model in a newspaper outfit. Claudia judges the runway walk.',5,'Newspaper, tape',[['Full outfit',4],['Includes a hat',3],['Claudia gasps',3]],'The model'],
+ ['Lip Reader','Read lips through noisy headphones','One player wears headphones with loud music while a partner mouths phrases. Rotate.',4,'Headphones',[['3 phrases read',3],['6 phrases read',3],['Everyone gets one',4]],'Best lip reader'],
+ ['Backwards Spelling','Spell castle words backwards','Claudia gives words (castle, banish, dagger…). Each player spells one backwards.',3,'Word list',[['Half correct',4],['All but one correct',3],['All correct',3]],'Hardest word spelt correctly'],
+ ['Hot Potato','Pass an object; when music stops, answer','Pass an object while music plays. When it stops, the holder answers a trivia question.',4,'An object, music, questions',[['3 right answers',3],['6 right answers',3],['No wrong answers',4]],'Most correct answers'],
+ ['Sardines','One hides; the group must all find them','One player hides. Everyone searches. Anyone who finds them squeezes in with them.',5,'',[['Half the group finds them',4],['Everyone finds them',6]],'First to find the hider'],
+ ['Blind Taste Test','Name 5 foods while blindfolded','Blindfolded tasters try 5 foods or drinks. The group must name them all.',4,'5 foods, blindfold',[['2 named',3],['4 named',3],['All 5',4]],'The taster who gets the most right'],
+ ['Domino Run','Build a chain that topples all the way','Build a domino chain (dominoes, books, DVD cases) at least 2 metres long that topples in one go.',5,'Dominoes or books',[['It topples 1 metre',4],['Topples the whole way',4],['Done first try',2]],'Whoever sets the final piece'],
+ ['Who Said It?','Match quotes to players','Everyone writes an anonymous fact about themselves. Claudia reads them; the group matches facts to people.',5,'Paper, pens',[['Half matched',4],['All but one',3],['All matched',3]],'Best detective (most correct guesses)']
+].map(function(a){return {title:a[0],sum:a[1],desc:a[2],mins:a[3],props:a[4],goals:a[5],shield:a[6]}});
+var FREE_MINS=5;
 var SECRETS=[
  'Subtly sabotage ONE goal of this mission without getting caught.',
  'Get a Faithful to say the word "banana" during the mission.',
@@ -176,7 +241,13 @@ var SECRETS=[
  'Get at least two people to high-five you during the mission.',
  'Pretend to be bad at something you are secretly good at.',
  'Get someone to hand you something (a sweet, a drink, a pen) without asking directly.',
- 'Agree loudly with every idea, then quietly steer the group towards the worst one.'
+ 'Agree loudly with every idea, then quietly steer the group towards the worst one.',
+ 'Make sure YOU win the Shield, without looking desperate.',
+ 'Make sure the Shield goes to a fellow Traitor.',
+ 'Get the group to waste at least 30 seconds arguing about the rules.',
+ 'Say the word "castle" three times without anyone calling you out.',
+ 'Get someone to swap places or seats with you.',
+ 'Start a chant or a nickname for another player that sticks.'
 ];
 
 /* ============ LANDING ============ */
@@ -204,7 +275,7 @@ function hostMain(){
   var KEY='traitors-host-'+ROOM;
   function blankState(prev){
     var s={v:1,code:ROOM,started:false,phase:'lobby',round:0,players:{},order:[],kicked:[],pot:0,potMax:50,cur:'£',
-      mission:null,vote:null,event:null,seq:prev?prev.seq:0,winner:null,log:[]};
+      mission:null,vote:null,event:null,stash:0,done:{},timer:{total:180000,left:180000,endAt:null,phones:true},seq:prev?prev.seq:0,winner:null,log:[]};
     if(prev){
       s.cur=prev.cur;s.potMax=prev.potMax;s.kicked=prev.kicked||[];
       prev.order.forEach(function(id){var p=prev.players[id];if(!p)return;s.players[id]={id:id,name:p.name,role:'faithful',alive:true,fate:null};s.order.push(id)});
@@ -212,9 +283,12 @@ function hostMain(){
     return s;
   }
   var S=LS.get(KEY,null); if(!S||S.code!==ROOM) S=blankState(null);
+  if(!S.timer) S.timer={total:180000,left:180000,endAt:null,phones:true};
+  if(S.stash==null) S.stash=0;
+  if(!S.done) S.done={};
   LS.set('traitors-last-host',ROOM);
   var conns={}, allConns=[], peer=null, peerStatus='Starting…', peerLive=false;
-  var ui={tab:null,hideRoles:false,draft:{title:'',desc:'',goals:[['',2]],secret:''},banishPick:'',murder:'',recruit:'',winner:'auto'};
+  var ui={tab:null,hideRoles:false,steal:5,pick:null,mfilter:'all',draft:{title:'',desc:'',goals:[['',2]],secret:'',mins:3,shield:''},banishPick:'',murder:'',recruit:'',winner:'auto'};
 
   function log(m){S.log.unshift({t:Date.now(),m:m});if(S.log.length>60)S.log.length=60}
   function P(id){return S.players[id]}
@@ -292,11 +366,19 @@ function hostMain(){
       else{out.big='Faithful';out.tone='faithful';out.sub='Find the Traitors. Banish them all.'}
     } else if(e.kind==='morning'){
       var mName=e.murdered?nameOf(e.murdered):null;
-      if(pid===e.murdered){out.title='In the night…';out.big='Murdered';out.tone='dead';out.sub='The Traitors came for you. You are now a ghost: watch, but stay silent.'}
+      if(pid===e.shielded){out.title='In the night…';out.big='Shielded';out.tone='faithful';out.sub='The Traitors came for you, but your Shield saved you. Tell people… or keep it to yourself.'}
+      else if(pid===e.murdered){out.title='In the night…';out.big='Murdered';out.tone='dead';out.sub='The Traitors came for you. You are now a ghost: watch, but stay silent.'}
       else if(pid===e.recruited){out.title='In the night…';out.big='Recruited';out.tone='traitor';out.allies=allyNames(pid);
         out.sub='The Traitors have chosen you. You are now a TRAITOR.'+(mName?' Also, '+mName+' was murdered.':'')+(out.allies.length?' Your fellow Traitors:':'')}
       else{out.title='Last night…';out.big=mName||'No one';out.tone=mName?'dead':'neutral';out.sub=mName?'was murdered.':'was murdered. Everyone survived the night.';
+        if(me.role==='traitor'&&e.shielded&&me.alive){out.sub+=' Your target was protected by a Shield.'}
         if(me.role==='traitor'&&e.recruited&&me.alive){out.sub+=' '+nameOf(e.recruited)+' has joined the Traitors.'}}
+    } else if(e.kind==='sabotage'){
+      out.title='Sabotage!';out.big='−'+money(e.amount);out.tone='traitor';
+      out.sub=me.role==='traitor'?'Your secret task worked. The Traitors\' stash is now '+money(S.stash)+', yours to share at the end, win or lose.':'The Traitors pulled off a secret task under your noses. That money has vanished from the prize fund.';
+    } else if(e.kind==='shield'){
+      if(pid!==e.target)return null;
+      out.title='You have won';out.big='A Shield';out.tone='faithful';out.sub='You cannot be murdered tonight. Tell people… or keep it secret.';
     } else if(e.kind==='banish'){
       var t=P(e.target);var tn=t?t.name:'?';
       out.title=pid===e.target?'You have been banished. You were…':tn+' was…';
@@ -307,7 +389,7 @@ function hostMain(){
       out.title=mine?'Victory!':'Defeat…';
       out.big=win==='traitors'?'Traitors win':'Faithful win';out.tone=win==='traitors'?'traitor':'faithful';
       var winners=list().filter(function(p){return p.alive&&((p.role==='traitor')===(win==='traitors'))}).map(function(p){return p.name});
-      out.sub='Prize fund: '+money(S.pot)+(winners.length?'. Shared by: '+winners.join(', '):'');
+      out.sub='Prize fund: '+money(S.pot)+(winners.length?'. Shared by: '+winners.join(', '):'')+(S.stash?'. Traitors\' stash: '+money(S.stash)+', shared by every Traitor, win or lose.':'');
     }
     return out;
   }
@@ -315,11 +397,13 @@ function hostMain(){
     var me=P(pid);if(!me)return null;
     var showAll=S.phase==='end';
     var v={code:S.code,phase:S.phase,started:S.started,round:S.round,pot:S.pot,potMax:S.potMax,cur:S.cur,
-      me:{id:me.id,name:me.name,alive:me.alive,fate:me.fate,role:S.started?me.role:null},
+      me:{id:me.id,name:me.name,alive:me.alive,fate:me.fate,role:S.started?me.role:null,shield:!!me.shield},
+      stash:(me.role==='traitor'||showAll)?S.stash:null,
       allies:S.started&&me.role==='traitor'?allyNames(pid):null,
       players:list().map(function(p){return {id:p.id,name:p.name,alive:p.alive,fate:p.fate,role:(showAll||p.fate==='banished')?p.role:null}}),
       mission:null,vote:null,event:personalEvent(pid),winner:S.winner};
-    if(S.mission){v.mission={title:S.mission.title,desc:S.mission.desc,goals:S.mission.goals.map(function(g){return {text:g.text,value:g.value,done:g.done}}),
+    var tl=tLeft();if(S.timer.phones&&(S.timer.endAt||tl!==S.timer.total))v.timer={left:tl,running:!!S.timer.endAt};
+    if(S.mission){v.mission={title:S.mission.title,desc:S.mission.desc,shield:S.mission.shield||'',goals:S.mission.goals.map(function(g){return {text:g.text,value:g.value,done:g.done}}),
       secret:me.role==='traitor'?(S.mission.secret||''):null}}
     if(S.vote){
       v.vote={open:S.vote.open,revealed:S.vote.revealed,mine:S.vote.votes[pid]||null,count:Object.keys(S.vote.votes).length,voters:alive().length};
@@ -359,24 +443,32 @@ function hostMain(){
       if(t>=n){alert('Someone has to be Faithful!');return}
       if(!confirm('Reveal roles to '+n+' phones now?\n\n'+t+' Traitor'+(t>1?'s':'')+', '+(n-t)+' Faithful.'))return;
       S.started=true;S.round=1;S.phase='free';list().forEach(function(p){p.alive=true;p.fate=null});
-      S.event={seq:++S.seq,kind:'roles'};log('Roles revealed: '+t+' Traitors among '+n);ui.tab='mission';commit()},
+      S.event={seq:++S.seq,kind:'roles'};revealSound();log('Roles revealed: '+t+' Traitors among '+n);ui.tab='mission';commit()},
     phase:function(id){
       if(id==='roundtable'){S.vote=null;ui.banishPick=''}
       if(id==='night'){ui.murder='';ui.recruit=''}
+      if(id==='free')setTimer(FREE_MINS*60000,true);
       S.phase=id;ui.tab=id;log({free:'Free time',roundtable:'Round Table called',night:'Night fell'}[id]||id);commit()},
     addGoal:function(){ui.draft.goals.push(['',2]);render()},
     delGoal:function(i){ui.draft.goals.splice(+i,1);if(!ui.draft.goals.length)ui.draft.goals.push(['',2]);render()},
     sendMission:function(){
       var d=ui.draft;if(!d.title.trim()){alert('Give the mission a name (or pick a preset).');return}
-      S.mission={title:d.title.trim(),desc:d.desc.trim(),secret:(d.secret||'').trim(),
+      S.done[d.title.trim()]=S.round;ui.pick=null;
+      S.mission={title:d.title.trim(),desc:d.desc.trim(),secret:(d.secret||'').trim(),shield:(d.shield||'').trim(),
         goals:d.goals.filter(function(g){return String(g[0]).trim()}).map(function(g){return {text:String(g[0]).trim(),value:Math.max(0,+g[1]||0),done:false,added:0}})};
-      S.phase='mission';log('Mission: '+S.mission.title);ui.draft={title:'',desc:'',goals:[['',2]],secret:''};commit()},
+      var mins=Math.max(0,+d.mins||0);if(mins)setTimer(mins*60000,false);
+      S.phase='mission';log('Mission: '+S.mission.title+(mins?' ('+mins+' min, timer ready)':''));ui.draft={title:'',desc:'',goals:[['',2]],secret:'',mins:3,shield:''};commit()},
+    pick:function(id){
+      if(id==='custom'){ui.pick='custom';ui.draft={title:'',desc:'',goals:[['',2]],secret:ui.draft.secret,mins:3,shield:''};render();return}
+      var m=MISSIONS[+id];if(!m)return;ui.pick=+id;
+      ui.draft={title:m.title,desc:m.desc,mins:m.mins,shield:m.shield||'',secret:ui.draft.secret,goals:m.goals.map(function(g){return [g[0],g[1]]})};render()},
+    mfilter:function(id){ui.mfilter=id;render()},
     goal:function(i){
       var g=S.mission&&S.mission.goals[+i];if(!g)return;
       if(!g.done){var room=S.potMax>0?Math.max(0,S.potMax-S.pot):g.value;g.added=Math.min(g.value,room);S.pot+=g.added;g.done=true;log('✓ '+g.text+' (+'+money(g.added)+')')}
       else{S.pot=Math.max(0,S.pot-(g.added||0));g.added=0;g.done=false;log('✗ '+g.text+' unticked')}
       commit()},
-    endMission:function(){if(!S.mission)return;log('Mission over: '+S.mission.title);S.mission=null;S.phase='free';ui.tab='roundtable';commit()},
+    endMission:function(){if(!S.mission)return;log('Mission over: '+S.mission.title+'. '+FREE_MINS+' min free time started');S.mission=null;S.phase='free';setTimer(FREE_MINS*60000,true);ui.tab='roundtable';commit()},
     pot:function(d){d=+d;S.pot=Math.max(0,S.pot+d);if(S.potMax>0)S.pot=Math.min(S.potMax,S.pot);log('Prize fund '+(d>0?'+':'')+money(d));commit()},
     openVote:function(){S.vote={open:true,revealed:false,votes:{}};log('Voting opened');commit()},
     lockVote:function(){if(S.vote){S.vote.open=false;log('Votes locked');commit()}},
@@ -384,21 +476,22 @@ function hostMain(){
     banish:function(){
       var id=ui.banishPick||defaultBanish();var p=P(id);if(!p||!p.alive){alert('Pick who is banished.');return}
       if(!confirm('Banish '+p.name+'?\n\nEvery phone will count down and reveal they were '+(p.role==='traitor'?'a TRAITOR':'FAITHFUL')+'.'))return;
-      p.alive=false;p.fate='banished';S.event={seq:++S.seq,kind:'banish',target:id,role:p.role};
+      p.alive=false;p.fate='banished';S.event={seq:++S.seq,kind:'banish',target:id,role:p.role};revealSound();
       S.vote=null;ui.banishPick='';S.phase='free';log(p.name+' was banished: '+cap(p.role));ui.tab='night';commit()},
     dawn:function(){
       var m=ui.murder||null,r=ui.recruit||null;
       if(m&&r&&m===r){alert('You can\'t murder and recruit the same person.');return}
-      var mp=m&&P(m),rp=r&&P(r);
-      if(!confirm('Dawn breaks.\n\nMurdered: '+(mp?mp.name:'no one')+'\nRecruited: '+(rp?rp.name:'no one')+'\n\nSend to phones?'))return;
-      if(mp){mp.alive=false;mp.fate='murdered'}
+      var mp=m&&P(m),rp=r&&P(r),sh=mp&&mp.shield?m:null;
+      if(!confirm('Dawn breaks.\n\nMurdered: '+(mp?mp.name+(sh?' (SHIELDED: they survive)':''):'no one')+'\nRecruited: '+(rp?rp.name:'no one')+'\n\nSend to phones?'))return;
+      if(mp&&!sh){mp.alive=false;mp.fate='murdered'}
       if(rp){rp.role='traitor'}
-      S.round++;S.event={seq:++S.seq,kind:'morning',murdered:m,recruited:r};S.phase='free';
-      log('Dawn: '+(mp?mp.name+' murdered':'no murder')+(rp?', '+rp.name+' recruited':''));ui.tab='mission';commit()},
+      list().forEach(function(p){p.shield=false});
+      S.round++;S.event={seq:++S.seq,kind:'morning',murdered:sh?null:m,recruited:r,shielded:sh};revealSound();S.phase='free';
+      log('Dawn: '+(sh?mp.name+' saved by Shield':mp?mp.name+' murdered':'no murder')+(rp?', '+rp.name+' recruited':''));ui.tab='mission';commit()},
     endGame:function(){
       var w=ui.winner==='auto'?autoWinner():ui.winner;
       if(!confirm('End the game: '+(w==='traitors'?'TRAITORS':'FAITHFUL')+' win?\n\nAll roles will be revealed on every phone.'))return;
-      S.winner=w;S.phase='end';S.vote=null;S.mission=null;S.event={seq:++S.seq,kind:'end',winner:w};log('Game over: '+w+' win');commit()},
+      S.winner=w;S.phase='end';S.vote=null;S.mission=null;S.event={seq:++S.seq,kind:'end',winner:w};revealSound();log('Game over: '+w+' win');commit()},
     toggleAlive:function(id){var p=P(id);if(!p)return;
       if(p.alive){if(!confirm('Mark '+p.name+' as dead (no announcement)?'))return;p.alive=false;p.fate='murdered'}
       else{if(!confirm('Bring '+p.name+' back to life?'))return;p.alive=true;p.fate=null}
@@ -409,11 +502,25 @@ function hostMain(){
       S=blankState(S);ui.tab=null;log('New game');commit()},
     wipe:function(){if(!confirm('Wipe EVERYTHING including players? Everyone will need to re-enter their names.'))return;
       var seq=S.seq;S=blankState(null);S.seq=seq;ui.tab=null;commit()},
+    secretWin:function(){
+      if(!S.mission||S.mission.secretDone)return;var amt=Math.max(0,Math.min(+ui.steal||0,S.pot));
+      if(!confirm('Traitors completed their secret task?\n\n'+money(amt)+' moves from the prize fund into the Traitors\' stash. Every phone sees "Sabotage!".'))return;
+      S.pot-=amt;S.stash=(S.stash||0)+amt;S.mission.secretDone=true;S.event={seq:++S.seq,kind:'sabotage',amount:amt};revealSound();log('Sabotage: '+money(amt)+' stolen');commit()},
+    shield:function(id){var p=P(id);if(!p||!p.alive)return;p.shield=!p.shield;
+      if(p.shield){S.event={seq:++S.seq,kind:'shield',target:id};log(p.name+' won a Shield')}else log(p.name+'\'s Shield removed');commit()},
+    tset:function(sec){if(!S.timer)return;S.timer.total=S.timer.left=(+sec)*1000;S.timer.endAt=null;commit()},
+    tgo:function(){var t=S.timer;unlockAudio();
+      if(t.endAt){t.left=tLeft();t.endAt=null}else{if(t.left<=0)t.left=t.total;t.endAt=Date.now()+t.left;log('Timer started: '+mmss(t.left))}
+      commit()},
+    tadd:function(sec){var t=S.timer,ms=(+sec)*1000;if(t.endAt)t.endAt+=ms;else t.left+=ms;commit()},
+    treset:function(){S.timer.endAt=null;S.timer.left=S.timer.total;commit()},
+    sound:function(){setMuted(!muted);unlockAudio();if(!muted)heart(0);render()},
+    tphones:function(){S.timer.phones=!S.timer.phones;commit()},
     copy:function(){var u=joinUrl();if(navigator.clipboard)navigator.clipboard.writeText(u).then(function(){alert('Link copied!')},function(){prompt('Copy this link',u)});else prompt('Copy this link',u)},
     share:function(){var u=joinUrl();if(navigator.share)navigator.share({title:'The Traitors',text:'Enter the castle…',url:u}).catch(function(){});else act.copy()}
   };
   var changeAct={
-    preset:function(v){if(v==='')return;var m=MISSIONS[+v];if(!m)return;ui.draft.title=m.title;ui.draft.desc=m.desc;ui.draft.goals=m.goals.map(function(g){return [g[0],g[1]]});render()},
+    preset:function(v){if(v==='')return;var m=MISSIONS[+v];if(!m)return;ui.draft.title=m.title;ui.draft.mins=m.mins||3;ui.draft.desc=m.desc;ui.draft.goals=m.goals.map(function(g){return [g[0],g[1]]});render()},
     secretPreset:function(v){ui.draft.secret=v==='random'?SECRETS[Math.floor(Math.random()*SECRETS.length)]:v;render()},
     cur:function(v){S.cur=String(v).slice(0,10);commit()},
     potMax:function(v){S.potMax=Math.max(0,+v||0);if(S.potMax>0)S.pot=Math.min(S.pot,S.potMax);commit()}
@@ -478,13 +585,34 @@ function hostMain(){
     var th='<div class="tabs">'+tabs.map(function(t){var live=S.phase===t[0]||(t[0]==='mission'&&S.phase==='mission');
       return '<button class="tab '+(tab===t[0]?'on':'')+'" data-act="tab" data-id="'+t[0]+'">'+t[1]+(live?' <span class="live">LIVE</span>':'')+'</button>'}).join('')+'</div>';
     var panel={free:pFree,mission:pMission,roundtable:pRound,night:pNight,end:pEnd}[tab]();
-    return '<div class="grid"><div>'+th+'<div class="card">'+panel+'</div></div><div>'+side()+'</div></div>';
+    return '<div class="grid"><div>'+th+timerCard()+'<div class="card">'+panel+'</div></div><div>'+side()+'</div></div>';
+  }
+  function setTimer(ms,start){S.timer.total=S.timer.left=ms;S.timer.endAt=start?Date.now()+ms:null;if(start)unlockAudio()}
+  function tLeft(){var t=S.timer;return t.endAt?Math.max(0,t.endAt-Date.now()):t.left}
+  function timerCard(){
+    var t=S.timer,l=tLeft(),run=!!t.endAt;
+    return '<div class="card tcard"><div class="trow"><div class="tdisp'+(l<=0?' done':(run&&l<=10000?' low':''))+'" id="tdisp">'+mmss(l)+'</div><div class="tbtns">'+
+      '<button class="btn sm '+(run?'':'gold')+'" data-act="tgo">'+(run?'Pause':(l<=0?'Restart':'Start'))+'</button>'+
+      '<button class="btn sm ghost" data-act="tadd" data-id="30">+30s</button><button class="btn sm ghost" data-act="treset">Reset</button></div></div>'+
+      '<div class="row tpre">'+[1,2,3,5,10].map(function(m){return '<button class="btn xs ghost" data-act="tset" data-id="'+m*60+'">'+m+' min</button>'}).join('')+
+      '<button class="btn xs '+(t.phones?'gold':'ghost')+'" data-act="tphones">Phones: '+(t.phones?'on':'off')+'</button>'+'<button class="btn xs '+(muted?'ghost':'gold')+'" data-act="sound">'+(muted?'🔇 Sound off':'🔊 Sound on')+'</button></div></div>';
+  }
+  setInterval(function(){
+    var t=S.timer;if(!t)return;var l=tLeft();
+    if(t.endAt&&l<=0){t.endAt=null;t.left=0;beep();log('⏰ Time\'s up');commit();return}
+    var el=document.getElementById('tdisp');
+    if(el&&t.endAt){el.textContent=mmss(l);el.className='tdisp'+(l<=10000?' low':'')}
+  },250);
+  function shieldPicker(){
+    return '<div class="field"><div class="label">Award a Shield (protects from murder tonight only)</div><div class="chips">'+
+      alive().map(function(p){return '<button class="btn xs '+(p.shield?'gold':'ghost')+'" data-act="shield" data-id="'+p.id+'">🛡 '+esc(p.name)+'</button>'}).join('')+
+      '</div><p class="muted small">Only the winner\'s phone is told. Tap again to take it back.</p></div>';
   }
   function liveNote(ph){return S.phase===ph?'<p class="ok">● Live on phones now</p>':''}
   function pFree(){
     return '<h3>Free time · Round '+S.round+'</h3>'+liveNote('free')+
       '<p class="muted">Phones show the prize fund, who\'s still in, and a hold-to-see-your-role button. Use this between missions, at breakfast, and while people plot in their pods.</p>'+
-      (S.phase!=='free'?'<button class="btn gold" data-act="phase" data-id="free">Send phones to Free time</button>':'')+
+      (S.phase!=='free'?'<button class="btn gold" data-act="phase" data-id="free">Send phones to Free time ('+FREE_MINS+' min timer)</button>':'<button class="btn sm ghost" data-act="tset" data-id="'+FREE_MINS*60+'">Reset to '+FREE_MINS+' min</button>')+shieldPicker()+
       '<div class="warnbox">Flow: <b>Mission</b> → Free time → <b>Round Table</b> (vote and banish) → <b>Night</b> (murder or recruit) → dawn reveal → repeat. End the game from <b>Endgame</b>.</div>';
   }
   function pMission(){
@@ -493,14 +621,20 @@ function hostMain(){
       return '<h3>Live mission: '+esc(m.title)+'</h3>'+liveNote('mission')+'<p class="muted">'+esc(m.desc)+'</p>'+
         '<div class="label" style="margin-top:12px">Tick goals as they\'re achieved</div>'+
         m.goals.map(function(g,i){return '<label class="hgoal '+(g.done?'done':'')+'" data-act="goal" data-id="'+i+'"><input type="checkbox" '+(g.done?'checked':'')+' tabindex="-1" style="pointer-events:none"><span style="flex:1">'+esc(g.text)+'</span><b>+'+esc(money(g.value))+'</b></label>'}).join('')+
-        (m.secret?'<div class="secretbox"><div class="label" style="color:#ffb3b6">Traitors\' secret task</div>'+esc(m.secret)+'</div>':'<p class="muted small">No secret Traitor task for this one.</p>')+
+        (m.secret?'<div class="secretbox"><div class="label" style="color:#ffb3b6">Traitors\' secret task</div>'+esc(m.secret)+
+          (m.secretDone?'<p style="color:var(--red2);font-weight:600">Done: money stolen into the stash.</p>':
+          '<div class="row" style="margin-top:8px"><input type="number" id="steal" data-bind="steal" value="'+esc(ui.steal)+'" min="0" style="flex:0 0 80px"><button class="btn sm red" data-act="secretWin">They did it: steal</button></div><p class="muted small">Success moves that much from the fund to the Traitors\' stash (theirs win or lose). If they fail, do nothing.</p>')+
+          '</div>':'<p class="muted small">No secret Traitor task for this one.</p>')+
+        (m.shield?'<div class="warnbox">🛡 <b>Shield rule:</b> '+esc(m.shield)+'</div>':'')+shieldPicker()+
         '<button class="btn" data-act="endMission">Mission over → Free time</button>';
     }
     var d=ui.draft;
     return '<h3>New mission</h3><p class="muted small">Pick a preset or write your own. Nothing reaches the phones until you press Send.</p>'+
-      '<select id="m-preset" data-change="preset"><option value="">Choose a preset mission…</option>'+MISSIONS.map(function(m,i){return '<option value="'+i+'">'+esc(m.title)+'</option>'}).join('')+'</select>'+
+      missionPicker()+
+      (ui.pick!=null&&MISSIONS[ui.pick]?'<div class="warnbox">Selected: <b>'+esc(MISSIONS[ui.pick].title)+'</b>. Tweak anything below, then Send.</div>':'')+
       '<div class="field"><div class="label">Mission name</div><input type="text" id="m-title" data-bind="draft.title" value="'+esc(d.title)+'" placeholder="e.g. Tower of Trust"></div>'+
       '<div class="field"><div class="label">What everyone reads</div><textarea id="m-desc" data-bind="draft.desc" placeholder="Rules of the mission">'+esc(d.desc)+'</textarea></div>'+
+      '<div class="field"><div class="label">Time limit (minutes). Sets the timer; you press Start once everyone has read it.</div><input type="number" id="m-mins" data-bind="draft.mins" value="'+esc(d.mins)+'" min="0" step="0.5" style="max-width:120px"></div>'+
       '<div class="label">Goals and prize money</div>'+
       d.goals.map(function(g,i){return '<div class="goalrow"><input type="text" id="g-t-'+i+'" data-bind="draft.goals.'+i+'.0" value="'+esc(g[0])+'" placeholder="Goal">'+
         '<input type="number" id="g-v-'+i+'" data-bind="draft.goals.'+i+'.1" value="'+esc(g[1])+'" min="0"><button class="btn xs ghost" data-act="delGoal" data-id="'+i+'">✕</button></div>'}).join('')+
@@ -508,7 +642,24 @@ function hostMain(){
       '<div class="field"><div class="label" style="color:#ffb3b6">Secret task for Traitors only (optional)</div>'+
       '<select id="m-secretp" data-change="secretPreset"><option value="">Pick a secret task…</option><option value="random">🎲 Random</option>'+SECRETS.map(function(s){return '<option value="'+esc(s)+'">'+esc(s)+'</option>'}).join('')+'<option value="">(none)</option></select>'+
       '<textarea id="m-secret" data-bind="draft.secret" placeholder="Only Traitors will see this, behind a hold-to-read button that everyone has.">'+esc(d.secret)+'</textarea></div>'+
+      '<div class="field"><div class="label" style="color:var(--gold2)">🛡 Shield rule: what wins the Shield? (optional)</div><input type="text" id="m-shield" data-bind="draft.shield" value="'+esc(d.shield||'')+'" placeholder="e.g. Whoever finds the most tokens"></div>'+
       '<button class="btn gold" data-act="sendMission">Send mission to phones</button>';
+  }
+  function missionPicker(){
+    var f=ui.mfilter||'all';
+    var chips=[['all','All'],['todo','Not done'],['quick','Quick ≤3 min'],['noprops','No props']].map(function(c){return '<button class="btn xs '+(f===c[0]?'gold':'ghost')+'" data-act="mfilter" data-id="'+c[0]+'">'+c[1]+'</button>'}).join('');
+    var nDone=MISSIONS.filter(function(m){return S.done[m.title]}).length;
+    var cards=MISSIONS.map(function(m,i){
+      var dn=S.done[m.title];
+      if(f==='todo'&&dn)return '';if(f==='quick'&&m.mins>3)return '';if(f==='noprops'&&m.props)return '';
+      var max=m.goals.reduce(function(a,g){return a+g[1]},0);
+      return '<button class="mcard'+(dn?' done':'')+(ui.pick===i?' sel':'')+'" data-act="pick" data-id="'+i+'">'+
+        '<div class="mt">'+(dn?'<span class="mtag okt">✓ Done R'+dn+'</span> ':'')+esc(m.title)+'</div><div class="ms">'+esc(m.sum)+'</div>'+
+        '<div class="mtags"><span class="mtag">⏱ '+m.mins+' min</span><span class="mtag">💰 '+esc(money(max))+'</span><span class="mtag">'+(m.props?'🧰 '+esc(m.props):'No props')+'</span></div>'+
+        (m.shield?'<div class="msh">🛡 '+esc(m.shield)+'</div>':'')+'</button>';
+    }).join('');
+    return '<div class="row tpre" style="margin:6px 0">'+chips+'<span class="muted small" style="flex:1;text-align:right">'+nDone+'/'+MISSIONS.length+' played</span></div>'+
+      '<div class="mgrid"><button class="mcard'+(ui.pick==='custom'?' sel':'')+'" data-act="pick" data-id="custom"><div class="mt">✏️ Custom mission</div><div class="ms">Write your own from scratch</div></button>'+cards+'</div>';
   }
   function pRound(){
     if(S.phase!=='roundtable'){
@@ -540,12 +691,13 @@ function hostMain(){
         '<button class="btn gold" data-act="phase" data-id="night">Night falls</button>';
     }
     var tr=traitorsAlive(),fa=faithfulAlive();
-    var opts=function(sel){return '<option value="">No one</option>'+fa.map(function(p){return '<option value="'+p.id+'" '+(sel===p.id?'selected':'')+'>'+esc(p.name)+'</option>'}).join('')};
+    var opts=function(sel){return '<option value="">No one</option>'+fa.map(function(p){return '<option value="'+p.id+'" '+(sel===p.id?'selected':'')+'>'+esc(p.name)+(p.shield?' (🛡 shielded)':'')+'</option>'}).join('')};
     return '<h3>Night has fallen</h3>'+liveNote('night')+
       '<p>"Everyone close your eyes. <b>Traitors</b>, open your eyes."</p>'+
       '<p class="muted small">Traitors awake: '+(ui.hideRoles?'•••':tr.map(function(p){return esc(p.name)}).join(', ')||'none')+'</p>'+
       '<div class="field"><div class="label">Murdered tonight</div><select id="n-murder" data-bind="murder">'+opts(ui.murder)+'</select></div>'+
       '<div class="field"><div class="label">Recruited tonight</div><select id="n-recruit" data-bind="recruit">'+opts(ui.recruit)+'</select></div>'+
+      '<p class="muted small">If they pick a shielded player, the murder fails: everyone sees "No one", the target sees SHIELDED, and the Traitors are told. Shields expire at dawn.</p>'+
       '<p class="muted small">Everyone gets the same "Do not react… 3, 2, 1". The murdered player sees MURDERED, a recruit sees RECRUITED (plus their new allies), everyone else sees who died, or "No one".</p>'+
       '<button class="btn gold" data-act="dawn">Dawn: reveal to phones</button>';
   }
@@ -567,9 +719,10 @@ function hostMain(){
     var pct=S.potMax>0?Math.min(100,S.pot/S.potMax*100):0;
     var pot='<div class="card"><div class="label center">Prize fund</div><div class="pot">'+esc(money(S.pot))+'</div>'+
       (S.potMax>0?'<div class="potbar"><i style="width:'+pct+'%"></i></div><p class="muted small center">of '+esc(money(S.potMax))+'</p>':'')+
+      (S.stash?'<p class="small center" style="color:var(--red2)">Traitors\' stash: '+esc(money(S.stash))+'</p>':'')+
       '<div class="row" style="margin-top:6px"><button class="btn sm ghost" data-act="pot" data-id="-5">−5</button><button class="btn sm ghost" data-act="pot" data-id="-1">−1</button><button class="btn sm" data-act="pot" data-id="1">+1</button><button class="btn sm" data-act="pot" data-id="5">+5</button></div></div>';
     var rows=list().map(function(p){
-      return '<div class="prow '+(p.alive?'':'dead')+'"><span class="dot '+(conns[p.id]?'on':'')+'"></span><span class="pname">'+esc(p.name)+'</span>'+
+      return '<div class="prow '+(p.alive?'':'dead')+'"><span class="dot '+(conns[p.id]?'on':'')+'"></span><span class="pname">'+esc(p.name)+(p.shield?' 🛡':'')+'</span>'+
       '<span class="badge '+(ui.hideRoles?'':p.role)+'" data-act="flipRole" data-id="'+p.id+'" style="cursor:pointer">'+(ui.hideRoles?'•••':p.role)+'</span>'+
       (p.fate?'<span class="fate">'+p.fate+'</span>':'')+
       '<button class="btn xs ghost" data-act="toggleAlive" data-id="'+p.id+'">'+(p.alive?'☠':'↺')+'</button></div>'}).join('');
@@ -632,7 +785,7 @@ function playerMain(){
 
   function onMsg(m){
     if(!m||typeof m!=='object')return;
-    if(m.t==='view'){view=m.v;rejected=null;render()}
+    if(m.t==='view'){view=m.v;view._recv=Date.now();rejected=null;render()}
     else if(m.t==='rejected'){rejected=m;render()}
   }
 
@@ -642,6 +795,7 @@ function playerMain(){
     showing=true;var my=++token;
     ov.hidden=false;ov.className='';
     var at=function(ms,fn){setTimeout(function(){if(my===token)fn()},ms)};
+    if(ev.kind!=='shield')revealSound();
     ov.innerHTML='<div class="dnr">Do not react.</div><p class="muted" style="margin-top:14px">Keep your phone close to your chest.</p>';
     at(2200,function(){ov.innerHTML='<p class="sub">You will be told in</p><div class="count">3</div>'});
     at(3200,function(){ov.innerHTML='<p class="sub">You will be told in</p><div class="count">2</div>'});
@@ -668,7 +822,9 @@ function playerMain(){
       else h='<div class="result tone-faithful"><div class="ev-title serif">Private briefing</div><p class="sub" style="font-size:22px">No secret orders. You are Faithful. Complete the mission and watch for sabotage.</p></div>';
     } else {
       h='<div class="result tone-'+(r==='traitor'?'traitor':'faithful')+'"><div class="ev-title serif">You are</div><div class="bigword">'+(r==='traitor'?'Traitor':'Faithful')+'</div>'+
-        (r==='traitor'?(v.allies&&v.allies.length?'<p class="sub">Fellow Traitors:</p><div class="chips" style="justify-content:center">'+v.allies.map(function(n){return '<span class="chip red">'+esc(n)+'</span>'}).join('')+'</div>':'<p class="sub">You are the only Traitor left standing.</p>'):'')+'</div>';
+        (r==='traitor'?(v.allies&&v.allies.length?'<p class="sub">Fellow Traitors:</p><div class="chips" style="justify-content:center">'+v.allies.map(function(n){return '<span class="chip red">'+esc(n)+'</span>'}).join('')+'</div>':'<p class="sub">You are the only Traitor left standing.</p>'):'')+
+        (r==='traitor'&&v.stash?'<p class="sub">Traitors\' stash: '+esc(money(v.stash))+'</p>':'')+
+        (v.me.shield?'<p class="sub" style="color:var(--gold2)">🛡 You hold a Shield tonight.</p>':'')+'</div>';
     }
     return h+'<p class="muted small" style="margin-top:20px">Let go to hide</p>';
   }
@@ -683,8 +839,12 @@ function playerMain(){
 
   /* ---- screens ---- */
   function paintStatus(){var el=document.getElementById('pstatus');if(el)el.innerHTML=statusHtml();else if(!view)render()}
-  function statusHtml(){return '<span><span class="dot '+(live?'on':'warn')+'"></span> '+esc(live?'Connected':status)+'</span><span>Room '+esc(ROOM)+'</span>'}
-  function wrap(inner){return '<div class="wrap"><div class="status" id="pstatus">'+statusHtml()+'</div>'+inner+'</div>'}
+  function statusHtml(){return '<span><span class="dot '+(live?'on':'warn')+'"></span> '+esc(live?'Connected':status)+'</span><span>Room '+esc(ROOM)+' <button class="btn xs ghost" data-pact="mute" style="margin-left:6px">'+(muted?'🔇':'🔊')+'</button></span>'}
+  function wrap(inner){return '<div class="wrap"><div class="status" id="pstatus">'+statusHtml()+'</div>'+ptimerHtml()+inner+'</div>'}
+  function pLeft(){var t=view&&view.timer;if(!t)return 0;return t.running?Math.max(0,t.left-(Date.now()-view._recv)):t.left}
+  function ptimerInner(l){return l<=0?'<span class="muted small">Timer</span><b style="color:var(--red2)">Time\'s up!</b>':'<span class="muted small">Time left</span><b>'+mmss(l)+'</b>'}
+  function ptimerHtml(){if(!view||!view.timer||view.phase==='night'||view.phase==='end')return '';return '<div class="ptimer" id="ptimer">'+ptimerInner(pLeft())+'</div>'}
+  setInterval(function(){var el=document.getElementById('ptimer');if(el&&view&&view.timer&&view.timer.running)el.innerHTML=ptimerInner(pLeft())},250);
 
   app.addEventListener('click',function(e){
     var b=e.target.closest('[data-pact]');if(!b)return;var a=b.dataset.pact;
@@ -695,6 +855,7 @@ function playerMain(){
       if(!view||!view.vote||!view.vote.open)return;var t=b.dataset.id;var target=view.vote.mine===t?null:t;
       view.vote.mine=target;render();send({t:'vote',target:target});
     } else if(a==='rename'){me.name='';save();rejected=null;render()}
+    else if(a==='mute'){setMuted(!muted);unlockAudio();if(!muted)heart(0,.6);paintStatus()}
     else if(a==='fresh'){LS.del(KEY);location.reload()}
     else if(a==='home'){location.href=baseUrl()}
   });
@@ -731,6 +892,7 @@ function playerMain(){
       var m=v.mission;
       h=deadBanner+'<div class="label" style="margin-top:16px">Mission</div><h2>'+esc(m.title)+'</h2><p>'+esc(m.desc)+'</p>'+
         '<div class="card">'+m.goals.map(function(g){return '<div class="goal '+(g.done?'done':'')+'"><span class="tick">'+(g.done?'✓':'')+'</span><span>'+esc(g.text)+'</span><span class="val">+'+esc(money(g.value))+'</span></div>'}).join('')+'</div>'+
+        (m.shield?'<div class="card" style="border-color:var(--gold)"><div class="label" style="color:var(--gold2)">🛡 Shield up for grabs</div>'+esc(m.shield)+'<p class="muted small">The Shield protects you from murder tonight.</p></div>':'')+
         potCard+'<div class="hold" data-peek="secret">Press and hold for your private briefing</div><p class="muted small center">Everyone has one. Read it secretly.</p>';
     } else if(v.phase==='roundtable'){
       h=deadBanner+'<h2 style="margin-top:16px">The Round Table</h2>';
@@ -752,6 +914,7 @@ function playerMain(){
     } else if(v.phase==='end'){
       var w=v.winner;
       h='<div class="center" style="margin-top:16px"><div class="label">Game over</div><div class="bigword '+(w==='traitors'?'':'')+'" style="color:'+(w==='traitors'?'var(--red2)':'var(--gold2)')+'">'+(w==='traitors'?'Traitors win':'Faithful win')+'</div></div>'+potCard+
+        (v.stash?'<div class="card center" style="color:var(--red2)"><div class="label">Traitors\' stash</div><div class="pot" style="color:var(--red2)">'+esc(money(v.stash))+'</div><p class="small">Shared by every Traitor, win or lose.</p></div>':'')+
         '<div class="card"><div class="label">Everyone\'s true colours</div>'+v.players.map(function(p){return '<div class="tally"><span>'+esc(p.name)+(p.alive?'':' <span class="muted small">('+p.fate+')</span>')+'</span><span class="badge '+p.role+'">'+p.role+'</span></div>'}).join('')+'</div>';
     } else {
       h=deadBanner+potCard+rolePeek+roster();
