@@ -405,7 +405,7 @@ function hostMain(){
   if(S.stash==null) S.stash=0;
   if(!S.done) S.done={};
   LS.set('traitors-last-host',ROOM);
-  var tvs=[],introOn=false;
+  var tvs=[],introOn=false,introPage=0,introVoice=LS.get('traitors-intro-voice',true);
   var conns={}, allConns=[], peer=null, peerStatus='Starting…', peerLive=false;
   var ui={tab:null,hideRoles:false,steal:5,pick:null,mfilter:'all',draft:{title:'',desc:'',goals:[['',2]],secret:'',mins:3,shield:''},banishPick:'',murder:'',recruit:'',winner:'auto'};
 
@@ -450,6 +450,7 @@ function hostMain(){
     c.on('open',function(){try{c.send({t:'welcome',started:S.started})}catch(e){}});
     c.on('data',function(m){
       if(!m||typeof m!=='object')return;
+      if(m.t==='introAt'){introPage=+m.i||0;introOn=true;render();return}
       if(m.t==='introDone'){introOn=false;if(musicLevel)musicLevel(1);render();return}
       if(m.t==='hello'&&m.tv){if(tvs.indexOf(c)<0)tvs.push(c);try{c.send({t:'tv',v:tvView()})}catch(e){}render();return}
       if(m.t==='hello'){
@@ -558,6 +559,16 @@ function hostMain(){
       if(S.vote.revealed)v.vote.results=Object.keys(S.vote.votes).map(function(k){return {from:nameOf(k),to:nameOf(S.vote.votes[k])}})}
     return v;
   }
+  function introCard(){
+    if(!introOn)return '';var seg=INTRO[introPage]||INTRO[0];
+    return '<div class="card" style="border-color:var(--gold);margin-top:10px"><div class="row" style="align-items:center;flex-wrap:wrap">'+
+      '<div style="flex:1;min-width:200px"><div class="label">🎬 Intro on the TV · page '+(introPage+1)+' of '+INTRO.length+(introVoice?' · narrator speaking':' · you\'re presenting')+'</div>'+
+      '<div class="serif" style="font-size:20px;color:var(--gold2)">'+esc(seg.title)+'</div>'+
+      '<p style="font-size:'+(introVoice?'15':'19')+'px;line-height:1.45;margin:.4em 0">'+(introVoice?'<span class="muted">Script: </span>':'🎙 ')+esc(seg.text)+'</p></div>'+
+      '<div style="display:flex;gap:6px;flex:none"><button class="btn sm ghost" data-act="introPrev" '+(introPage<=0?'disabled':'')+'>◀ Prev</button>'+
+      '<button class="btn sm gold" data-act="introNext">'+(introPage>=INTRO.length-1?'Finish ▶':'Next ▶')+'</button>'+
+      '<button class="btn sm red" data-act="introStop">End</button></div></div></div>';
+  }
   function tvUrl(){return baseUrl()+'?tv&room='+ROOM}
 
   /* ---- game actions ---- */
@@ -657,7 +668,10 @@ function hostMain(){
     shield:function(id){var p=P(id);if(!p||!p.alive)return;p.shield=!p.shield;
       if(p.shield){S.event={seq:++S.seq,kind:'shield',target:id};log(p.name+' won a Shield')}else log(p.name+'\'s Shield removed');commit()},
     intro:function(){if(!tvs.length){alert('Open the TV screen on the laptop first (and click it once).');return}
-      tvs.forEach(function(c){try{c.send({t:'tvcmd',cmd:'intro'})}catch(e){}});introOn=true;if(musicLevel)musicLevel(0.15);log('Intro started on TV');render()},
+      tvs.forEach(function(c){try{c.send({t:'tvcmd',cmd:'intro',voice:introVoice})}catch(e){}});introOn=true;introPage=0;if(musicLevel)musicLevel(0.15);log('Intro started on TV');render()},
+    introVoice:function(){introVoice=!introVoice;LS.set('traitors-intro-voice',introVoice);render()},
+    introNext:function(){tvs.forEach(function(c){try{c.send({t:'tvcmd',cmd:'goto',i:introPage+1})}catch(e){}})},
+    introPrev:function(){tvs.forEach(function(c){try{c.send({t:'tvcmd',cmd:'goto',i:Math.max(0,introPage-1)})}catch(e){}})},
     introStop:function(){tvs.forEach(function(c){try{c.send({t:'tvcmd',cmd:'stop'})}catch(e){}});introOn=false;if(musicLevel)musicLevel(1);render()},
     tset:function(sec){if(!S.timer)return;S.timer.total=S.timer.left=(+sec)*1000;S.timer.endAt=null;commit()},
     tgo:function(){var t=S.timer;unlockAudio();
@@ -699,7 +713,8 @@ function hostMain(){
       '<div class="status" style="gap:14px"><span>Room <span class="roomcode">'+ROOM+'</span></span>'+
       '<span><span class="dot '+(peerLive?'on':'warn')+'"></span> '+esc(peerLive?'Live':peerStatus)+'</span>'+
       '<span>'+on+'/'+list().length+' phones</span><a class="btn xs ghost" href="'+esc(tvUrl())+'" target="_blank" rel="noopener">📺 TV screen'+(tvs.length?' ●':'')+'</a>'+
-      (tvs.length?(introOn?'<button class="btn xs red" data-act="introStop">⏹ Stop intro</button>':'<button class="btn xs gold" data-act="intro">🎬 Play intro</button>'):'')+'</div></div>'+
+      (tvs.length?(introOn?'<button class="btn xs red" data-act="introStop">⏹ End intro</button>':'<button class="btn xs gold" data-act="intro">🎬 Play intro</button>')+
+        '<button class="btn xs '+(introVoice?'gold':'ghost')+'" data-act="introVoice" title="Narrator voice on the TV, or present it yourself">'+(introVoice?'🔊 Voice on':'🎙 Voice off: I\'ll present')+'</button>':'')+'</div></div>'+introCard()+
       (!peerLive&&peerStatus.length>20?'<div class="warnbox">'+esc(peerStatus)+'</div>':'');
   }
   function drawQR(){
@@ -1151,7 +1166,8 @@ function tvMain(){
     c.on('open',function(){if(conn!==c)return;lastMsg=Date.now();live=true;try{c.send({t:'hello',tv:true})}catch(e){}});
     c.on('data',function(m){if(conn!==c)return;lastMsg=Date.now();live=true;if(!m)return;
       if(m.t==='tv'){view=m.v;view._recv=Date.now();render()}
-      else if(m.t==='tvcmd'){if(m.cmd==='intro'){if(!started)start();playIntro()}else if(m.cmd==='stop')stopIntro(false)}});
+      else if(m.t==='tvcmd'){if(m.cmd==='intro'){if(!started)start();playIntro(m.voice!==false)}else if(m.cmd==='goto')gotoIntro(+m.i)
+        else if(m.cmd==='stop')stopIntro(false)}});
     c.on('close',function(){if(conn===c){live=false;connecting=0}});c.on('error',function(){});
   }
   function tick(){
@@ -1225,7 +1241,7 @@ function tvMain(){
   }
 
   /* ---- narrated intro ---- */
-  var intro={on:false,i:0,token:0,audio:null},introFiles={};
+  var intro={on:false,i:0,token:0,audio:null,voice:true},introFiles={};
   /* intro-audio.json (optional) maps scene ids to clip file names, e.g. {"01":"ElevenLabs_….mp3"} */
   try{fetch('intro-audio.json',{cache:'no-store'}).then(function(r){return r.ok?r.json():{}}).then(function(j){if(j&&typeof j==='object')introFiles=j}).catch(function(){})}catch(e){}
   function tellHost(){try{if(conn&&conn.open)conn.send({t:'introDone'})}catch(e){}}
@@ -1242,8 +1258,14 @@ function tvMain(){
         .then(function(){clipsLoaded++;var e=document.getElementById('iload');if(e)e.textContent=clipsLoaded+' / '+INTRO.length});
     });
   }
-  function playIntro(){
-    stopIntro(true);intro.on=true;intro.i=0;var my=++intro.token;ov.hidden=false;ov.className='intro';
+  function gotoIntro(i){
+    if(!intro.on)return;if(intro.audio){try{intro.audio.pause()}catch(e){}}intro.audio=null;
+    if(i>=INTRO.length){intro.token++;intro.on=false;ov.className='';ov.hidden=true;ov.innerHTML='';tellHost();render();return}
+    intro.i=Math.max(0,i);var my=++intro.token;introStep(my);
+  }
+  function playIntro(voice){
+    stopIntro(true);intro.on=true;intro.i=0;intro.voice=voice!==false;var my=++intro.token;ov.hidden=false;ov.className='intro';
+    if(!intro.voice){introStep(my);return}
     if(!preloading)preloadIntro();
     var t0=Date.now();
     (function wait(){
@@ -1256,12 +1278,15 @@ function tvMain(){
   function introStep(my){
     if(my!==intro.token)return;var seg=INTRO[intro.i];
     if(!seg){intro.on=false;ov.className='';ov.hidden=true;ov.innerHTML='';tellHost();render();return}
-    ov.innerHTML='<div class="iwrap"><div class="iprog">'+(intro.i+1)+' / '+INTRO.length+'</div><div class="iskip">Esc to stop</div><div class="istage" id="istage"></div>'+
-      '<div class="icap"><div class="ititle2">'+esc(seg.title)+'</div><p class="isub">'+esc(seg.text)+'</p></div></div>';
+    try{if(conn&&conn.open)conn.send({t:'introAt',i:intro.i})}catch(e){}
+    ov.innerHTML='<div class="iwrap"><div class="iprog">'+(intro.i+1)+' / '+INTRO.length+'</div><div class="iskip">'+(intro.voice?'← → to skip · Esc to stop':'← → to change page · Esc to stop')+'</div><div class="istage" id="istage"></div>'+
+      '<div class="icap"><div class="ititle2">'+esc(seg.title)+'</div>'+(intro.voice?'<p class="isub">'+esc(seg.text)+'</p>':'')+'</div></div>';
     var done=false,began=false,fallback=Math.max(5000,seg.text.split(/\s+/).length/2.4*1000+1200);
-    function begin(){if(began||my!==intro.token)return;began=true;runDemo(seg.demo,my)}
+    var estDur=fallback/1000-1.2;
+    function begin(){if(began||my!==intro.token)return;began=true;var d=intro.audio&&isFinite(intro.audio.duration)&&intro.audio.duration>0?intro.audio.duration:estDur;runDemo(seg.demo,my,seg,d)}
     function fin(){if(done||my!==intro.token)return;done=true;begin();intro.i++;setTimeout(function(){introStep(my)},900)}
     function silent(){begin();setTimeout(fin,fallback)}
+    if(!intro.voice){begin();return} /* presenter mode: stay on this page until Next */
     var src=clips[seg.id]===null?null:(clips[seg.id]||clipSrc(seg.id));
     if(!src){silent();return}
     try{var a=new Audio(src);intro.audio=a;a.preload='auto';
@@ -1269,64 +1294,84 @@ function tvMain(){
       setTimeout(function(){if(!began&&my===intro.token){begin()}},2500); /* never leave a scene frozen */
       var pr=a.play();if(pr&&pr.catch)pr.catch(function(){if(!began)silent()})}catch(e){silent()}
   }
-  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&intro.on)stopIntro(false);else if((e.key==='i'||e.key==='I')&&!intro.on&&started)playIntro()});
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape'&&intro.on)stopIntro(false);
+    else if(intro.on&&(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown')){e.preventDefault&&e.preventDefault();gotoIntro(intro.i+1)}
+    else if(intro.on&&(e.key==='ArrowLeft'||e.key==='PageUp'))gotoIntro(intro.i-1);
+    else if((e.key==='i'||e.key==='I')&&!intro.on&&started)playIntro(true);
+    else if((e.key==='p'||e.key==='P')&&!intro.on&&started)playIntro(false)});
   function phone(inner,cls){return '<div class="iphone '+(cls||'')+'"><div class="iscr">'+inner+'</div></div>'}
-  function runDemo(kind,my){
+  function runDemo(kind,my,seg,dur){
     var st=document.getElementById('istage');if(!st)return;
-    var at=function(ms,fn){setTimeout(function(){if(my===intro.token){var e=document.getElementById('istage');if(e)fn(e)}},ms)};
+    var at=function(ms,fn){setTimeout(function(){if(my===intro.token){var e=document.getElementById('istage');if(e)fn(e)}},Math.max(0,ms))};
+    /* when a phrase is spoken: its word position in the line, scaled to the clip's real length */
+    var words=seg.text.split(/\s+/).length;
+    var w=function(ph,lead){var i=seg.text.indexOf(ph);if(i<0)return 0;var n=seg.text.slice(0,i).split(/\s+/).length-1;return n/words*dur*1000-(lead==null?150:lead)};
     var set=function(id,html){var e=document.getElementById(id);if(e)e.innerHTML=html};
+    var cls=function(id,c){var e=document.getElementById(id);if(e)e.className=c};
     var money=function(n){return fmtMoney(view?view.cur:'£',n)};
+    var idle='<div class="s">Round 1</div><div class="w" style="font-size:1.6vw;color:var(--gold2)">The Traitors</div>';
     if(kind==='title'){st.innerHTML='<div class="ilogo">The Traitors</div><div class="icandles">'+'<div class="icandle"></div>'.repeat(7)+'</div>'}
-    else if(kind==='roles'||kind==='morning'){
-      var n=kind==='roles'?2:3;var h='';for(var i=0;i<n;i++)h+=phone('<div id="ph'+i+'"><div class="w" style="color:#fff">Do not react.</div></div>');st.innerHTML=h;
-      [3,2,1].forEach(function(k,j){at(1600+j*900,function(){for(var i=0;i<n;i++)set('ph'+i,'<div class="s">You will be told in</div><div class="n">'+k+'</div>')})});
-      at(4400,function(){
-        if(kind==='roles'){set('ph0','<div class="s">You are…</div><div class="w gold">Faithful</div>');set('ph1','<div class="s">You are…</div><div class="w red">Traitor</div><div class="s">Fellow Traitors:<br><b style="color:#ffd9da">Sam</b></div>')}
-        else{set('ph0','<div class="s">Last night…</div><div class="w grey">Sam</div><div class="s">was murdered.</div>');set('ph1','<div class="s">Last night…</div><div class="w" style="color:#fff">No one</div><div class="s">was murdered.</div>');set('ph2','<div class="s">In the night…</div><div class="w red">Recruited</div><div class="s">You are now a Traitor.</div>')}
-      });
+    else if(kind==='roles'){
+      st.innerHTML='<div class="center"><div style="display:flex;gap:4vw;justify-content:center">'+phone('<div id="ph0">'+idle+'</div>')+phone('<div id="ph1">'+idle+'</div>')+'</div><div id="rb" class="ibig" style="font-size:3.4vw;height:5vw;margin-top:1vw"></div></div>';
+      at(w('your phone will tell'),function(){set('ph0','<div class="s">You are…</div>');set('ph1','<div class="s">You are…</div>')});
+      at(w('Most of you'),function(){set('ph0','<div class="s">You are…</div><div class="w gold">Faithful</div>')});
+      at(w('But a small'),function(){set('ph1','<div class="s">You are…</div><div class="w red">Traitor</div><div class="s">Fellow Traitors:<br><b style="color:#ffd9da">Sam</b></div>')});
+      at(w('do not react'),function(){set('rb','<span style="color:#fff">Do not react.</span>')});
+    }
+    else if(kind==='morning'){
+      var b='<div class="s">At breakfast…</div>';
+      st.innerHTML=phone('<div id="ph0">'+b+'</div>')+phone('<div id="ph1">'+b+'</div>')+phone('<div id="ph2">'+b+'</div>');
+      at(w('Someone may'),function(){set('ph0','<div class="s">Last night…</div><div class="w grey">Sam</div><div class="s">was murdered.</div>')});
+      at(w('No one may'),function(){set('ph1','<div class="s">Last night…</div><div class="w" style="color:#fff">No one</div><div class="s">was murdered.</div>')});
+      at(w('you have been recruited'),function(){set('ph2','<div class="s">In the night…</div><div class="w red">Recruited</div><div class="s">You are now a Traitor.</div>')});
     }
     else if(kind==='hold'){
-      st.innerHTML=phone('<div id="hp"><div class="w" style="font-size:1.8vw;color:var(--gold2)">Round 1</div><div class="ihold">Press and hold<br>to see your role</div></div>')+'<div class="ifinger"></div>';
-      var loop=function(t){at(t+600,function(){set('hp','<div class="s">You are</div><div class="w gold">Faithful</div><div class="s">Let go to hide</div>')});
-        at(t+2100,function(){set('hp','<div class="w" style="font-size:1.8vw;color:var(--gold2)">Round 1</div><div class="ihold">Press and hold<br>to see your role</div>')})};
-      for(var t=0;t<30000;t+=3000)loop(t);
+      var home='<div class="w" style="font-size:1.8vw;color:var(--gold2)">Round 1</div><div class="ihold">Press and hold<br>to see your role</div>';
+      st.innerHTML=phone('<div id="hp">'+home+'</div>')+'<div class="ifinger"></div>';
+      var t0=w('press and hold');
+      for(var t=0;t<30000;t+=3000)(function(t){at(t0+t+500,function(){set('hp','<div class="s">You are</div><div class="w gold">Faithful</div><div class="s">Let go to hide</div>')});at(t0+t+2000,function(){set('hp',home)})})(t);
     }
     else if(kind==='mission'){
       var G=[['Tower stands for 10 seconds',4],['Taller than 1 metre',4],['Taller than the tallest player',2]];
       st.innerHTML='<div class="icard"><div class="tvlabel">Mission</div><div class="tvbig" style="font-size:3vw">Tower of Trust</div>'+G.map(function(g,i){return '<div class="goal" id="g'+i+'"><span class="tick"></span><span>'+g[0]+'</span><span class="val">+'+money(g[1])+'</span></div>'}).join('')+'</div>'+
         '<div class="center"><div class="tvlabel">Prize fund</div><div class="ipot" id="ipot">'+money(0)+'</div></div>';
-      var pot=0;G.forEach(function(g,i){at(1800+i*1700,function(){var e=document.getElementById('g'+i);if(e){e.className='goal done';e.querySelector('.tick').textContent='✓'}pot+=g[1];set('ipot',money(pot))})});
+      var pot=0,T=[w('Complete them'),w('money flows'),w('Every goal')];
+      G.forEach(function(g,i){at(T[i],function(){var e=document.getElementById('g'+i);if(e){e.className='goal done';var k=e.querySelector&&e.querySelector('.tick');if(k)k.textContent='✓'}pot+=g[1];set('ipot',money(pot))})});
     }
     else if(kind==='sabotage'){
       st.innerHTML='<div class="center"><div class="tvlabel">Prize fund</div><div class="ipot" id="ipot">'+money(12)+'</div><div id="sab" class="ibadge" style="height:4vw"></div></div><div class="center ihidden" id="stash"><div class="tvlabel">Traitors\' stash</div><div class="ipot red" style="font-size:6vw">'+money(5)+'</div></div>';
-      at(2200,function(){var p=document.getElementById('ipot');if(p){p.className='ipot hit';p.textContent=money(7)}set('sab','<span class="red">Sabotage! −'+money(5)+'</span>')});
-      at(3600,function(){var e=document.getElementById('stash');if(e)e.className='center';e&&(e.style.animation='rise .6s ease-out')});
+      at(w('secret orders'),function(){set('sab','<span class="red" style="font-size:2vw">Secret orders received…</span>')});
+      at(w('money vanishes'),function(){cls('ipot','ipot hit');set('ipot',money(7));set('sab','<span class="red">Sabotage! −'+money(5)+'</span>')});
+      at(w('straight into'),function(){cls('stash','center')});
     }
-    else if(kind==='shield'){st.innerHTML='<div class="center"><div class="ishield">🛡</div><div class="ibadge gold" style="margin-top:2vw">Safe from murder tonight</div></div>'}
+    else if(kind==='shield'){st.innerHTML='<div class="center"><div class="ishield">🛡</div><div class="ibadge gold" style="margin-top:2vw" id="shl"></div></div>';
+      at(w('cannot be murdered'),function(){set('shl','Safe from murder tonight')})}
     else if(kind==='roundtable'){
       var P=[['Jo',5],['Sam',2],['Priya',1],['Leo',1],['Mia',0]];
       st.innerHTML='<div class="ivotes">'+P.map(function(p,i){return '<div class="ivrow" id="vr'+i+'"><b>'+p[0]+'</b><div class="ivbar" id="vb'+i+'"></div><span id="vc'+i+'"></span></div>'}).join('')+'</div><div class="center" id="vout" style="width:28vw"></div>';
-      var c=P.map(function(){return 0}),order=[0,1,0,2,0,3,0,1,0];
-      order.forEach(function(k,j){at(1200+j*650,function(){c[k]++;var b=document.getElementById('vb'+k);if(b)b.style.width=(c[k]*5)+'vw';set('vc'+k,c[k])})});
-      at(1200+order.length*650+800,function(){var r=document.getElementById('vr0');if(r)r.className='ivrow out';set('vout','<div class="s" style="font-size:2vw;color:#cfc6b8">Jo was…</div>')});
-      at(1200+order.length*650+2600,function(){set('vout','<div class="s" style="font-size:2vw;color:#cfc6b8">Jo was…</div><div class="w gold" style="font-family:Cinzel,serif;font-weight:900;font-size:5vw">Faithful</div>')});
+      var c=P.map(function(){return 0}),order=[0,1,0,2,0,3,0,1,0],v0=w('When voting opens'),v1=w('The player with');
+      order.forEach(function(k,j){at(v0+(v1-v0)*j/order.length,function(){c[k]++;var bb=document.getElementById('vb'+k);if(bb)bb.style.width=(c[k]*5)+'vw';set('vc'+k,c[k])})});
+      at(w('must leave'),function(){cls('vr0','ivrow out');set('vout','<div class="s" style="font-size:2vw;color:#cfc6b8">Jo was…</div>')});
+      at(w('will be revealed'),function(){set('vout','<div class="s" style="font-size:2vw;color:#cfc6b8">Jo was…</div><div class="w gold" style="font-family:Cinzel,serif;font-weight:900;font-size:5vw">Faithful</div>')});
     }
     else if(kind==='night'){
-      st.innerHTML='<div class="inight" id="nd"></div><div class="imoon" id="nm"></div><div class="center" style="position:relative;z-index:2"><div id="nt" class="ibig" style="color:#cfc8d8">Everyone, close your eyes</div><div id="np"></div></div>';
-      var cls=function(id,c){var e=document.getElementById(id);if(e)e.className=c};
-      at(200,function(){cls('nd','inight on');cls('nm','imoon on')});
-      at(4500,function(){set('nt','<span class="red">Traitors, open your eyes</span>')});
-      at(8000,function(){set('nt','<span class="red">Choose your victim</span>');set('np','<div class="ipoint">👉</div>')});
-      at(12500,function(){set('nt','<span class="grey">Ghosts may watch… in silence</span>')});
+      st.innerHTML='<div class="inight" id="nd"></div><div class="imoon" id="nm"></div><div class="center" style="position:relative;z-index:2"><div id="nt" class="ibig" style="color:#cfc8d8">Night falls…</div><div id="np"></div></div>';
+      at(100,function(){cls('nd','inight on');cls('nm','imoon on')});
+      at(w('everyone closes'),function(){set('nt','Everyone, close your eyes')});
+      at(w('The Traitors will wake'),function(){set('nt','<span class="red">Traitors, open your eyes</span>')});
+      at(w('silently choose'),function(){set('nt','<span class="red">Choose your victim</span>');set('np','<div class="ipoint">👉</div>')});
+      at(w('Or they may recruit'),function(){set('nt','<span class="red">…or recruit a Faithful</span>')});
+      at(w('If you have been murdered'),function(){set('nt','<span class="grey">Ghosts may watch… in silence</span>');set('np','')});
     }
     else if(kind==='win'){
       st.innerHTML='<div class="iwin"><div class="icard" id="w1"><div class="ibadge gold">Faithful win</div><p class="tvtext">Banish every Traitor.<br>Share the prize fund.</p></div><div class="icard ihidden" id="w2"><div class="ibadge red">Traitors win</div><p class="tvtext">One Traitor survives to the end.<br>They take it all.</p></div></div>';
-      at(3800,function(){var e=document.getElementById('w2');if(e)e.className='icard'});
+      at(w('But if even one'),function(){cls('w2','icard')});
     }
     else if(kind==='rules'){
-      var L=['📵 Never show your phone','👻 Ghosts never speak','⚖️ The host’s word is final'];
+      var L=['📵 Never show your phone','👻 Ghosts never speak','⚖️ The host’s word is final'],LT=[w('Never show'),w('Ghosts never'),w('And the host')];
       st.innerHTML='<div class="irules">'+L.map(function(l,i){return '<div class="irule" id="ru'+i+'">'+l+'</div>'}).join('')+'</div>';
-      L.forEach(function(_,i){at(1000+i*1800,function(){var e=document.getElementById('ru'+i);if(e)e.className='irule on'})});
+      L.forEach(function(_,i){at(LT[i],function(){cls('ru'+i,'irule on')})});
     }
     else if(kind==='begin'){
       var qr='';try{if(view&&typeof qrcode!=='undefined'){var q=qrcode(0,'M');q.addData(view.joinUrl);q.make();qr=q.createSvgTag(6,2)}}catch(e){}
